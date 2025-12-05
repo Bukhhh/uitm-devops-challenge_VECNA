@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { auth, authorize } = require('../../middleware/auth');
+const { protect, authorize } = require('../../middleware/auth');
 const bookingsController = require('./bookings.controller');
 
 const router = express.Router();
@@ -110,7 +110,7 @@ const router = express.Router();
  */
 router.post(
   '/',
-  auth,
+  protect,
   authorize('USER', 'ADMIN'),
   [
     body('propertyId').isUUID().withMessage('Valid property ID is required'),
@@ -160,7 +160,7 @@ router.post(
  *       401:
  *         description: Unauthorized
  */
-router.get('/my-bookings', auth, bookingsController.getUserBookings);
+router.get('/my-bookings', protect, bookingsController.getUserBookings);
 
 /**
  * @swagger
@@ -196,7 +196,7 @@ router.get('/my-bookings', auth, bookingsController.getUserBookings);
  *       401:
  *         description: Unauthorized
  */
-router.get('/owner-bookings', auth, bookingsController.getOwnerBookings);
+router.get('/owner-bookings', protect, bookingsController.getOwnerBookings);
 
 /**
  * @swagger
@@ -257,7 +257,7 @@ router.get(
  *       404:
  *         description: Booking not found
  */
-router.get('/:id', auth, bookingsController.getBookingById);
+router.get('/:id', protect, bookingsController.getBookingById);
 
 /**
  * @swagger
@@ -295,7 +295,7 @@ router.get('/:id', auth, bookingsController.getBookingById);
  *       409:
  *         description: Property no longer available for this period
  */
-router.post('/:id/approve', auth, bookingsController.approveBooking);
+router.post('/:id/approve', protect, bookingsController.approveBooking);
 
 /**
  * @swagger
@@ -336,7 +336,7 @@ router.post('/:id/approve', auth, bookingsController.approveBooking);
  *       404:
  *         description: Booking not found
  */
-router.post('/:id/reject', auth, bookingsController.rejectBooking);
+router.post('/:id/reject', protect, bookingsController.rejectBooking);
 
 /**
  * @swagger
@@ -404,7 +404,7 @@ router.post('/:id/reject', auth, bookingsController.rejectBooking);
  */
 router.get(
   '/:id/rental-agreement',
-  auth,
+  protect,
   bookingsController.getRentalAgreementPDF
 );
 
@@ -441,7 +441,7 @@ router.get(
  */
 router.get(
   '/:id/rental-agreement/download',
-  auth,
+  protect,
   bookingsController.downloadRentalAgreementPDF
 );
 

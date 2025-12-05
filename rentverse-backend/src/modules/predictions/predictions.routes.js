@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { auth, authorize } = require('../../middleware/auth');
+const { protect, authorize } = require('../../middleware/auth');
 const predictionsController = require('./predictions.controller');
 
 const router = express.Router();
@@ -62,7 +62,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/status', auth, predictionsController.getStatus);
+router.get('/status', protect, predictionsController.getStatus);
 
 /**
  * @swagger
@@ -114,7 +114,7 @@ router.get('/status', auth, predictionsController.getStatus);
  */
 router.post(
   '/toggle',
-  auth,
+  protect,
   authorize('ADMIN'),
   [
     body('enabled')
@@ -212,6 +212,6 @@ router.post(
  *       504:
  *         description: Gateway Timeout - Prediction service timeout
  */
-router.post('/predict', auth, predictionsController.predict);
+router.post('/predict', protect, predictionsController.predict);
 
 module.exports = router;

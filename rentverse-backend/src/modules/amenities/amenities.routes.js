@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { auth, authorize } = require('../../middleware/auth');
+const { protect, authorize } = require('../../middleware/auth');
 const amenitiesController = require('./amenities.controller');
 
 const router = express.Router();
@@ -199,7 +199,7 @@ router.get('/:id', amenitiesController.getById);
  */
 router.post(
   '/',
-  auth,
+  protect,
   authorize('ADMIN'),
   [
     body('name')
@@ -268,7 +268,7 @@ router.post(
  */
 router.put(
   '/:id',
-  auth,
+  protect,
   authorize('ADMIN'),
   [
     body('name')
@@ -317,6 +317,6 @@ router.put(
  *       404:
  *         description: Amenity not found
  */
-router.delete('/:id', auth, authorize('ADMIN'), amenitiesController.delete);
+router.delete('/:id', protect, authorize('ADMIN'), amenitiesController.delete);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const express = require('express');
-const { auth, authorize } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 const {
   uploadSingle,
   uploadMultiple,
@@ -101,7 +101,7 @@ const router = express.Router();
  */
 router.post(
   '/single',
-  auth,
+  protect,
   uploadSingle('file'),
   uploadController.uploadSingle
 );
@@ -152,7 +152,7 @@ router.post(
  */
 router.post(
   '/multiple',
-  auth,
+  protect,
   uploadMultiple('files', 10),
   uploadController.uploadMultiple
 );
@@ -209,7 +209,7 @@ router.post(
  */
 router.post(
   '/property-images',
-  auth,
+  protect,
   authorize('USER', 'ADMIN'),
   uploadMultiple('files', 10),
   uploadController.uploadPropertyImages
@@ -259,7 +259,7 @@ router.post(
  */
 router.post(
   '/avatar',
-  auth,
+  protect,
   uploadSingle('file'),
   uploadController.uploadAvatar
 );
@@ -298,7 +298,7 @@ router.post(
  *       401:
  *         description: Unauthorized
  */
-router.delete('/delete/:publicId', auth, uploadController.deleteFile);
+router.delete('/delete/:publicId', protect, uploadController.deleteFile);
 
 /**
  * @swagger
@@ -328,7 +328,7 @@ router.delete('/delete/:publicId', auth, uploadController.deleteFile);
  *       401:
  *         description: Unauthorized
  */
-router.delete('/delete-multiple', auth, uploadController.deleteMultipleFiles);
+router.delete('/delete-multiple', protect, uploadController.deleteMultipleFiles);
 
 /**
  * @swagger
@@ -375,7 +375,7 @@ router.delete('/delete-multiple', auth, uploadController.deleteMultipleFiles);
  */
 router.get(
   '/video-thumbnail/:publicId',
-  auth,
+  protect,
   uploadController.getVideoThumbnail
 );
 

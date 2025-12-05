@@ -181,8 +181,11 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
       if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString())
       if (filters?.bedrooms) params.append('bedrooms', filters.bedrooms.toString())
 
-      const queryString = params.toString()
-      const url = queryString ? `/api/properties?${queryString}` : '/api/properties'
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+      const queryString = params.toString();
+      const url = queryString 
+        ? `${API_BASE}/api/properties?${queryString}` 
+        : `${API_BASE}/api/properties`;
 
       const response = await fetch(url, {
         method: 'GET',

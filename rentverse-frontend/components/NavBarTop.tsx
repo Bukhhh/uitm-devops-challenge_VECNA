@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -12,11 +12,12 @@ import UserDropdown from '@/components/UserDropdown'
 import LanguageSelector from '@/components/LanguageSelector'
 import SearchBoxProperty from '@/components/SearchBoxProperty'
 import SearchBoxPropertyMini from '@/components/SearchBoxPropertyMini'
-import useCurrentUser from '@/hooks/useCurrentUser'
+import ButtonSecondary from '@/components/ButtonSecondary'
+// FIX: Import the new Store
+import useAuthStore from '@/stores/authStore'
 import { usePropertyListingStore } from '@/stores/propertyListingStore'
 
 import type { SearchBoxType } from '@/types/searchbox'
-import ButtonSecondary from '@/components/ButtonSecondary'
 
 interface NavBarTopProps {
   searchBoxType?: SearchBoxType
@@ -24,7 +25,13 @@ interface NavBarTopProps {
 }
 
 function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly<NavBarTopProps>): React.ReactNode {
-  const { user, isAuthenticated } = useCurrentUser()
+  // FIX: Use the store state instead of the old hook
+  const { user, isLoggedIn } = useAuthStore()
+  
+  // Hydration fix to prevent server/client mismatch
+  const [isMounted, setIsMounted] = useState(false)
+  useEffect(() => setIsMounted(true), [])
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const router = useRouter()
   const { clearTemporaryData, isDirty } = usePropertyListingStore()
@@ -50,6 +57,7 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
       router.push('/')
     }
   }
+
   return (
     <div className={clsx([
       'w-full fixed z-50',
@@ -80,13 +88,19 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
               <LanguageSelector />
             </li>
             <li className="relative">
-              {isAuthenticated && user ? (
+              {/* FIX: Check isMounted AND isLoggedIn */}
+              {isMounted && isLoggedIn && user ? (
                 <>
-                  <Avatar 
-                    user={user} 
-                    onClick={toggleDropdown}
-                    className="cursor-pointer"
-                  />
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700">
+                      Hi, {user.firstName || 'User'}
+                    </span>
+                    <Avatar 
+                      user={user} 
+                      onClick={toggleDropdown}
+                      className="cursor-pointer border-2 border-blue-500 rounded-full hover:opacity-80 transition"
+                    />
+                  </div>
                   <UserDropdown 
                     isOpen={isDropdownOpen} 
                     onClose={closeDropdown}

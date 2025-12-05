@@ -1,66 +1,54 @@
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../config/database');
 
-const auth = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+const protect = async (req, res, next) => {
+  let token;
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. No token provided.',
+  // 1. Check for token in headers
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      // Get token from header
+      token = req.headers.authorization.split(' ')[1];
+
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Get user from the token
+      req.user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { id: true, email: true, role: true, isActive: true }
       });
+
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'User not found' });
+      }
+
+      next();
+    } catch (error) {
+      console.error('Auth Error:', error);
+      return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
+  }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-      },
-    });
-
-    if (!user || !user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. User not found or inactive.',
-      });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Access denied. Invalid token.',
-    });
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
   }
 };
 
+// Grant access to specific roles
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Access denied. User not authenticated.',
-      });
-    }
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. Insufficient permissions.',
+        message: `User role ${req.user.role} is not authorized to access this route`,
       });
     }
-
     next();
   };
 };
 
-module.exports = { auth, authorize };
+module.exports = { protect, authorize };

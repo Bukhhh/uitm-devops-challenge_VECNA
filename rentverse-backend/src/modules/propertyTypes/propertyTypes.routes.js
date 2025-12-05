@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const { auth, authorize } = require('../../middleware/auth');
+const { protect, authorize } = require('../../middleware/auth');
 const propertyTypesController = require('./propertyTypes.controller');
 
 const router = express.Router();
@@ -208,7 +208,7 @@ router.get('/:id', propertyTypesController.getById);
  */
 router.post(
   '/',
-  auth,
+  protect,
   authorize('ADMIN'),
   [
     body('code')
@@ -302,7 +302,7 @@ router.post(
  */
 router.put(
   '/:id',
-  auth,
+  protect,
   authorize('ADMIN'),
   [
     body('code')
@@ -361,6 +361,6 @@ router.put(
  *       404:
  *         description: Property type not found
  */
-router.delete('/:id', auth, authorize('ADMIN'), propertyTypesController.delete);
+router.delete('/:id', protect, authorize('ADMIN'), propertyTypesController.delete);
 
 module.exports = router;

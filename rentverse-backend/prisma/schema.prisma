@@ -36,35 +36,44 @@ model Amenity {
 
 /// Akun pengguna (tenant, landlord, admin).
 model User {
-  id               String            @id @default(uuid())
-  email            String            @unique
-  firstName        String            @default("")
-  lastName         String            @default("")
-  name             String            // Computed field (firstName + lastName) for backward compatibility
-  dateOfBirth      DateTime?
-  phone            String?
-  profilePicture   String?           // URL for user's profile picture
-  password         String
-  role             Role              @default(USER)
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  verifiedAt       DateTime?
-  
+  id             String    @id @default(uuid())
+  email          String    @unique
+  firstName      String    @default("")
+  lastName       String    @default("")
+  name           String
+  dateOfBirth    DateTime?
+  phone          String?
+  profilePicture String?
+  password       String
+  role           Role      @default(USER)
+
+  // --- 🔐 NEW SECURITY FIELDS (MODULE 1) ---
+  mfaEnabled     Boolean   @default(false)      
+  mfaSecret      String?                       
+  otp            String?                       
+  otpExpires     DateTime?                      
+  // ------------------------------------------
+
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  verifiedAt     DateTime?
+
   // OAuth IDs
-  googleId         String?           @unique
-  facebookId       String?           @unique
-  appleId          String?           @unique
-  githubId         String?           @unique
-  twitterId        String?           @unique
-  
-  leasesAsLandlord Lease[]           @relation("LandlordLeases")
-  leasesAsTenant   Lease[]           @relation("TenantLeases")
-  approvals        ListingApproval[] @relation("ReviewerApprovals")
-  payments         Payment[]
-  properties       Property[]        @relation("OwnerProperties")
-  propertyViews    PropertyView[]    @relation("PropertyViews")
-  propertyRatings  PropertyRating[]  @relation("PropertyRatings")
+  googleId       String?   @unique
+  facebookId     String?   @unique
+  appleId        String?   @unique
+  githubId       String?   @unique
+  twitterId      String?   @unique
+
+  // Relations (Keep these exactly as they were)
+  leasesAsLandlord  Lease[]           @relation("LandlordLeases")
+  leasesAsTenant    Lease[]           @relation("TenantLeases")
+  approvals         ListingApproval[] @relation("ReviewerApprovals")
+  payments          Payment[]
+  properties        Property[]        @relation("OwnerProperties")
+  propertyViews     PropertyView[]    @relation("PropertyViews")
+  propertyRatings   PropertyRating[]  @relation("PropertyRatings")
   propertyFavorites PropertyFavorite[] @relation("PropertyFavorites")
 
   @@map("users")
@@ -312,6 +321,7 @@ model spatial_ref_sys {
 enum Role {
   USER
   ADMIN
+  LANDLORD
 }
 
 /// Status listing untuk alur publikasi/approval.

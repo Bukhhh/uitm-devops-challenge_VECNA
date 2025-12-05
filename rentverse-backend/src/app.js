@@ -4,12 +4,30 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
+const rateLimit = require('express-rate-limit'); // <--- 1. Import Rate Limit
 
 const { connectDB } = require('./config/database');
 const swaggerSpecs = require('./config/swagger');
 const sessionMiddleware = require('./middleware/session');
 
 const app = express();
+
+// --- 🛡️ MODULE 2: RATE LIMITING (Anti-Spam) ---
+// Define the limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Apply to all API routes
+app.use('/api', limiter);
+// ------------------------------------------------
 
 // Ngrok and proxy handling middleware
 app.use((req, res, next) => {
@@ -106,12 +124,7 @@ app.use((req, res, next) => {
 
   // Debug logging
   if (process.env.NODE_ENV === 'development') {
-    console.log(`CORS: ${req.method} ${req.path}`);
-    console.log(`Origin: ${origin}`);
-    console.log(`Host: ${req.headers.host}`);
-    console.log(`X-Forwarded-Host: ${req.headers['x-forwarded-host']}`);
-    console.log(`X-Forwarded-Proto: ${req.headers['x-forwarded-proto']}`);
-    console.log('---');
+    // console.log(`CORS: ${req.method} ${req.path}`); // Commented out to reduce noise
   }
 
   // Handle preflight requests
@@ -210,37 +223,7 @@ app.use('/api/property-types', propertyTypeRoutes);
 app.use('/api/amenities', amenityRoutes);
 app.use('/api/predictions', predictionRoutes);
 
-/**
- * @swagger
- * /:
- *   get:
- *     summary: Welcome endpoint
- *     description: Returns a welcome message for the API
- *     tags: [General]
- *     responses:
- *       200:
- *         description: Welcome message
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Welcome to Rentverse Backend API
- *                 version:
- *                   type: string
- *                   example: 1.0.0
- *                 docs:
- *                   type: string
- *                   example: Visit /docs for API documentation
- *                 database:
- *                   type: string
- *                   example: Connected to PostgreSQL via Prisma
- *                 environment:
- *                   type: string
- *                   example: development
- */
+// Welcome endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'Welcome to Rentverse Backend API',
@@ -254,17 +237,6 @@ app.get('/', (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /cors-test:
- *   get:
- *     summary: CORS test endpoint
- *     description: Test endpoint for CORS functionality
- *     tags: [General]
- *     responses:
- *       200:
- *         description: CORS test successful
- */
 app.get('/cors-test', (req, res) => {
   res.json({
     message: 'CORS test successful!',
@@ -276,22 +248,6 @@ app.get('/cors-test', (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /cors-test:
- *   post:
- *     summary: CORS POST test endpoint
- *     description: Test POST endpoint for CORS functionality
- *     tags: [General]
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       200:
- *         description: CORS POST test successful
- */
 app.post('/cors-test', (req, res) => {
   res.json({
     message: 'CORS POST test successful!',
@@ -304,36 +260,6 @@ app.post('/cors-test', (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Health check endpoint
- *     description: Returns the health status of the API and database
- *     tags: [General]
- *     responses:
- *       200:
- *         description: API is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: OK
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                 database:
- *                   type: string
- *                   example: Connected
- *                 uptime:
- *                   type: number
- *                   example: 123.456
- *       503:
- *         description: Service unavailable
- */
 app.get('/health', async (req, res) => {
   try {
     const { prisma } = require('./config/database');
