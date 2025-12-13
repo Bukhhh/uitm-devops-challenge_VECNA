@@ -1,23 +1,18 @@
 // API forwarding utility for Next.js API routes
-
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
-
-export interface ForwardRequestOptions extends RequestInit {
-  timeout?: number
-  retries?: number
-}
+import { getApiBaseUrl } from './apiConfig'
 
 /**
  * Forward requests to backend API with error handling and retry logic
  */
 export async function forwardRequest(
   endpoint: string,
-  options: ForwardRequestOptions = {},
+  options: RequestInit = {},
 ): Promise<Response> {
-  const { timeout = 30000, retries = 0, ...fetchOptions } = options
+  const timeout = 30000
+  const retries = 0
   
   // Ensure proper URL construction by removing trailing slash from base and leading slash from endpoint
-  const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
+  const baseUrl = getApiBaseUrl()
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const url = `${baseUrl}${cleanEndpoint}`
   
@@ -28,15 +23,15 @@ export async function forwardRequest(
 
   // Don't set Content-Type for FormData - let the browser set it with boundary
   const defaultHeaders: Record<string, string> = {}
-  if (!(fetchOptions.body instanceof FormData)) {
+  if (!(options.body instanceof FormData)) {
     defaultHeaders['Content-Type'] = 'application/json'
   }
 
   const requestOptions: RequestInit = {
-    ...fetchOptions,
+    ...options,
     headers: {
       ...defaultHeaders,
-      ...fetchOptions.headers,
+      ...options.headers,
     },
   }
 

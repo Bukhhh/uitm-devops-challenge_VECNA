@@ -1,14 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import ContentWrapper from '@/components/ContentWrapper'
 import CardProperty from '@/components/CardProperty'
 import type { Property, PropertyTypeBackend } from '@/types/property'
 import { Plus } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
-import { createApiUrl } from '@/utils/apiConfig'
+import Image from 'next/image' // Keep for fallback images
 
 // Backend property response interfaces
 interface BackendProperty {
@@ -136,7 +135,7 @@ function convertBackendProperty(backendProperty: BackendProperty): Property {
     viewCount: backendProperty.viewCount,
     averageRating: backendProperty.averageRating,
     totalRatings: backendProperty.totalRatings,
-    isFavorited: false, // Would need separate API call to determine this
+    isFavorited: false,
     favoriteCount: backendProperty.favoriteCount,
     images: backendProperty.images,
     amenities: backendProperty.amenities || [],
@@ -154,7 +153,8 @@ function AllMyPropertiesPage() {
   const [myProperties, setMyProperties] = useState<Property[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const { isLoggedIn } = useAuthStore()
+  
+  const { isLoggedIn, token } = useAuthStore()
 
   useEffect(() => {
     const fetchMyProperties = async () => {
@@ -163,30 +163,38 @@ function AllMyPropertiesPage() {
         return
       }
 
-      try {
-        const token = localStorage.getItem('authToken')
-        if (!token) {
-          setError('Authentication token not found')
-          setIsLoading(false)
-          return
-        }
+      if (!token) return;
 
-        const response = await fetch(createApiUrl('properties/my-properties?page=1&limit=50'), {
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3000';
+        
+        // Debug: Log API call
+        console.log('Fetching properties from:', `${API_BASE}/api/properties/my-properties?page=1&limit=50`)
+        console.log('Token:', token ? 'Present' : 'Missing')
+        
+        const response = await fetch(`${API_BASE}/api/properties/my-properties?page=1&limit=50`, {
           method: 'GET',
           headers: {
             'accept': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
+          credentials: 'include', // Add credentials for CORS
         })
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch properties: ${response.status}`)
+          throw new Error(`Failed to fetch properties: ${response.status} ${response.statusText}`)
         }
 
         const data: MyPropertiesResponse = await response.json()
         
+        console.log('Properties data received:', data)
+        
         if (data.success) {
           const convertedProperties = data.data.properties.map(convertBackendProperty)
+          // Debug: Log image URLs
+          convertedProperties.forEach((prop, index) => {
+            console.log(`Property ${index} images:`, prop.images)
+          })
           setMyProperties(convertedProperties)
         } else {
           setError('Failed to load properties')
@@ -200,7 +208,7 @@ function AllMyPropertiesPage() {
     }
 
     fetchMyProperties()
-  }, [isLoggedIn])
+  }, [isLoggedIn, token])
 
   // Show loading state
   if (isLoading) {
@@ -242,6 +250,7 @@ function AllMyPropertiesPage() {
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-6 max-w-md">
             <div className="flex justify-center">
+              {/* Gunakan Image untuk static assets */}
               <Image
                 src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758310328/rentverse-base/image_17_hsznyz.png"
                 alt="Login required"
@@ -288,13 +297,7 @@ function AllMyPropertiesPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {myProperties.map((property) => (
           <div key={property.id} className="group relative">
-            {/* Status Badge */}
-            <div className="absolute top-4 right-4 z-10">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(property.status)}`}>
-                {getStatusDisplayName(property.status)}
-              </span>
-            </div>
-
+            {/* Status Badge - Now moved inside CardProperty */}
             <CardProperty property={property} />
           </div>
         ))}

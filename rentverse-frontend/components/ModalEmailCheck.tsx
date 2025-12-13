@@ -83,9 +83,9 @@ function ModalEmailCheck({ isModal = true }: Readonly<ModalEmailCheckProps>) {
 
         {/* Divider */}
         <div className="flex items-center my-6">
-          <div className="flex-grow border-t border-slate-200"></div>
+          <div className="grow border-t border-slate-200"></div>
           <span className="px-3 text-sm text-slate-500">or</span>
-          <div className="flex-grow border-t border-slate-200"></div>
+          <div className="grow border-t border-slate-200"></div>
         </div>
 
         {/* Google Login Button */}

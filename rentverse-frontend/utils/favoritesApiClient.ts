@@ -1,7 +1,8 @@
 import type { Property } from '@/types/property'
-import { getApiUrl } from './apiConfig'
 
-const BASE_URL = getApiUrl()
+// --- FIX 1: Define URL directly to be safe (no dependency on apiConfig) ---
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
+const BASE_URL = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
 
 // Backend response property structure
 interface BackendProperty {
@@ -91,9 +92,9 @@ function transformProperty(backendProperty: BackendProperty): Property {
     state: backendProperty.state,
     zipCode: backendProperty.zipCode,
     country: backendProperty.country,
-    price: backendProperty.price,
+    price: parseFloat(backendProperty.price.toString()), // Ensure number
     currencyCode: backendProperty.currencyCode,
-    type: backendProperty.propertyType.code as 'APARTMENT' | 'HOUSE' | 'STUDIO' | 'CONDO' | 'VILLA' | 'ROOM', // Map the propertyType.code to type
+    type: backendProperty.propertyType.code as 'APARTMENT' | 'HOUSE' | 'STUDIO' | 'CONDO' | 'VILLA' | 'ROOM',
     bedrooms: backendProperty.bedrooms,
     bathrooms: backendProperty.bathrooms,
     area: backendProperty.areaSqm,
@@ -106,20 +107,20 @@ function transformProperty(backendProperty: BackendProperty): Property {
     isFavorited: backendProperty.isFavorited,
     favoriteCount: backendProperty.favoriteCount,
     images: backendProperty.images,
-    amenities: backendProperty.amenities.map(a => a.amenity.name), // Simplify amenities to string array
+    amenities: backendProperty.amenities.map(a => a.amenity.name),
     latitude: backendProperty.latitude,
     longitude: backendProperty.longitude,
-    placeId: backendProperty.placeId,
-    projectName: backendProperty.projectName,
-    developer: backendProperty.developer,
-    status: backendProperty.status,
+    placeId: backendProperty.placeId || '',
+    projectName: backendProperty.projectName || '',
+    developer: backendProperty.developer || '',
+    status: backendProperty.status as any,
     createdAt: backendProperty.createdAt,
     updatedAt: backendProperty.updatedAt,
     ownerId: backendProperty.ownerId,
     propertyTypeId: backendProperty.propertyTypeId,
     owner: {
       ...backendProperty.owner,
-      phone: '', // Add missing phone field with empty string as fallback
+      phone: '', // Fallback
     },
     propertyType: backendProperty.propertyType,
     mapsUrl: backendProperty.mapsUrl,
@@ -127,35 +128,58 @@ function transformProperty(backendProperty: BackendProperty): Property {
 }
 
 export class FavoritesApiClient {
+  // --- FIX 2: Correctly retrieve token from Zustand Storage ---
   private static getAuthToken(): string | null {
     if (typeof window === 'undefined') return null
+
+    // 1. Try getting from Zustand Store (Primary)
+    const storedState = localStorage.getItem('rentverse-auth-store')
+    if (storedState) {
+        try {
+            const data = JSON.parse(storedState)
+            if (data.state && data.state.token) {
+                return data.state.token
+            }
+        } catch (e) {
+            console.error("Failed to parse auth store", e)
+        }
+    }
+
+    // 2. Try getting from direct key (Fallback/Legacy)
     return localStorage.getItem('authToken')
   }
 
   static async getFavorites(page: number = 1, limit: number = 10): Promise<FavoritesResponse> {
     const token = this.getAuthToken()
     
+    if (!token) {
+        throw new Error("Authentication token not found. Please log in.")
+    }
+
     const headers: Record<string, string> = {
       'accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}` // Add Header
     }
     
-    // Add authorization header if token is available
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
     try {
       console.log('Fetching favorites from API...')
-      console.log('URL:', `${BASE_URL}/properties/favorites?page=${page}&limit=${limit}`)
+      // Correct Endpoint path (make sure backend route matches /api/properties/favorites)
+      const url = `${BASE_URL}/api/properties/favorites?page=${page}&limit=${limit}`
+      console.log('URL:', url)
 
-      const response = await fetch(`${BASE_URL}/properties/favorites?page=${page}&limit=${limit}`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers,
-        mode: 'cors',
+        // mode: 'cors', // Next.js rewrites handle CORS usually, but keeping it is fine
         cache: 'no-cache',
       })
 
       console.log('Response status:', response.status)
+
+      if (response.status === 401) {
+         throw new Error("Session expired or invalid token. Please login again.");
+      }
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -164,14 +188,24 @@ export class FavoritesApiClient {
       }
 
       const data = await response.json()
-      console.log('Successfully fetched favorites:', data.data?.favorites?.length || 0, 'items')
+      
+      // Handle case where data.data is missing or structure is different
+      if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch favorites');
+      }
+
+      console.log('Successfully fetched favorites items')
       
       // Transform backend properties to frontend format
+      const favoritesList = data.data?.favorites || data.data || []; // Handle structure variations
+      
       const transformedData = {
-        ...data,
+        success: true,
         data: {
-          ...data.data,
-          favorites: data.data.favorites.map(transformProperty)
+          favorites: Array.isArray(favoritesList) ? favoritesList.map(transformProperty) : [],
+          pagination: data.data?.pagination || {
+             page: 1, limit: 10, total: 0, pages: 0
+          }
         }
       }
       
@@ -193,22 +227,21 @@ export class FavoritesApiClient {
   }> {
     const token = this.getAuthToken()
     
+    if (!token) throw new Error("No token found")
+
     const headers: Record<string, string> = {
       'accept': 'application/json',
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     }
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
     try {
       console.log('Toggling favorite for property:', propertyId)
-      const response = await fetch(`${BASE_URL}/properties/${propertyId}/favorite`, {
+      // Endpoint to toggle favorite
+      const response = await fetch(`${BASE_URL}/api/properties/${propertyId}/favorite`, {
         method: 'POST',
         headers,
-        mode: 'cors',
-        body: '',
+        body: JSON.stringify({}), // Empty body for POST
       })
 
       if (!response.ok) {
@@ -225,29 +258,14 @@ export class FavoritesApiClient {
     }
   }
 
-  static async removeFromFavorites(propertyId: string): Promise<{ 
-    success: boolean
-    message: string
-    data: {
-      action: string
-      isFavorited: boolean
-      favoriteCount: number
-    }
-  }> {
-    // Use the same POST endpoint - backend handles the toggle
+  static async removeFromFavorites(propertyId: string) {
+    // Use the same POST endpoint - backend handles the toggle logic
     return this.addToFavorites(propertyId)
   }
 
-  static async toggleFavorite(propertyId: string): Promise<{ 
-    success: boolean
-    message: string
-    data: {
-      action: string
-      isFavorited: boolean
-      favoriteCount: number
-    }
-  }> {
-    // Since backend uses same endpoint for toggle, we just call the POST endpoint
+  static async toggleFavorite(propertyId: string) {
     return this.addToFavorites(propertyId)
   }
 }
+
+export const favoritesApiClient = new FavoritesApiClient(); // Export instance for consistency

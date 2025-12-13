@@ -5,17 +5,26 @@ import { AuthApiClient } from '@/utils/authApiClient'
 import { setCookie, deleteCookie } from '@/utils/cookies'
 
 interface AuthActions {
-  // Login functionality
+  // Login functionality - Step 1: Password check
   setPassword: (password: string) => void
+  setEmail: (email: string) => void
   submitLogIn: () => Promise<void>
-  // New direct login action for MFA flow
+  
+  // Login functionality - Step 2: OTP verification
+  setOtp: (otp: string) => void
+  submitOtpVerification: () => Promise<void>
+  
+  // Direct login (called after OTP verification)
   login: (user: User, token: string) => void
+
+  // MFA State management
+  setRequireOTP: (requireOTP: boolean) => void
+  setMfaEmail: (email: string) => void
 
   // Signup functionality
   setFirstName: (firstName: string) => void
   setLastName: (lastName: string) => void
   setBirthdate: (birthdate: string) => void
-  setEmail: (email: string) => void
   setPhone: (phone: string) => void
   setSignUpPassword: (password: string) => void
   submitSignUp: () => Promise<void>
@@ -40,12 +49,15 @@ interface AuthActions {
 
 interface AuthFormState {
   password: string
+  otp: string
   firstName: string
   lastName: string
   birthdate: string
   email: string
   phone: string
   signUpPassword: string
+  requireOTP: boolean
+  mfaEmail: string
 }
 
 type AuthStore = AuthState & AuthFormState & AuthActions
@@ -58,22 +70,31 @@ const useAuthStore = create<AuthStore>()(
       isLoggedIn: false,
       isLoading: false,
       error: null,
+      token: null,
 
       // Form state
       password: '',
+      otp: '',
       firstName: '',
       lastName: '',
       birthdate: '',
       email: '',
       phone: '',
       signUpPassword: '',
+      
+      // MFA state
+      requireOTP: false,
+      mfaEmail: '',
 
       // Actions
       setPassword: (password: string) => set({ password }),
+      setEmail: (email: string) => set({ email }),
+      setOtp: (otp: string) => set({ otp }),
+      setRequireOTP: (requireOTP: boolean) => set({ requireOTP }),
+      setMfaEmail: (email: string) => set({ mfaEmail: email }),
       setFirstName: (firstName: string) => set({ firstName }),
       setLastName: (lastName: string) => set({ lastName }),
       setBirthdate: (birthdate: string) => set({ birthdate }),
-      setEmail: (email: string) => set({ email }),
       setPhone: (phone: string) => set({ phone }),
       setSignUpPassword: (signUpPassword: string) => set({ signUpPassword }),
       setLoading: (isLoading: boolean) => set({ isLoading }),
@@ -106,32 +127,34 @@ const useAuthStore = create<AuthStore>()(
       login: (user: User, token: string) => {
         console.log("✅ AuthStore: Logging in user", user.name);
         // Update state
-        set({ 
-          user, 
-          isLoggedIn: true, 
-          error: null 
+        set({
+          user,
+          token,
+          isLoggedIn: true,
+          error: null
         });
 
         // Sync with cookies for server-side middleware usage
         if (typeof window !== 'undefined') {
+          localStorage.setItem('authToken', token);
           setCookie('authToken', token, 7);
         }
       },
 
       submitLogIn: async () => {
-        // Legacy login - MFA Flow uses page.tsx now, but keeping structure for safety
-        const { email, password, setLoading, setError } = get()
+        const { email, password, setLoading, setError, setRequireOTP, setMfaEmail } = get()
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
 
-        if (!get().isLoginFormValid()) {
-          setError('Please enter a valid password')
+        if (!email || !password) {
+          setError('Please enter email and password')
           return
         }
+
         setLoading(true)
         setError(null)
 
         try {
-          // Note: This fetch might need to be updated to use API_BASE if used directly
-          const response = await fetch('/api/auth/login', {
+          const response = await fetch(`${API_BASE}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -140,18 +163,67 @@ const useAuthStore = create<AuthStore>()(
           const result = await response.json()
 
           if (response.ok && result.success) {
-             if (result.requireOTP) {
-               // Do nothing in store, let UI handle OTP step
-               return;
-             }
-             // Fallback for non-MFA
-             get().login(result.data.user, result.data.token);
-             window.location.href = '/'
+            if (result.requireOTP) {
+              // MFA required - save email and show OTP step
+              setRequireOTP(true)
+              setMfaEmail(email)
+              console.log('✅ OTP sent to email, awaiting verification')
+              return
+            }
+            // Fallback for non-MFA direct login
+            get().login(result.data.user, result.data.token)
+            window.location.href = '/'
           } else {
             setError(result.message || 'Login failed.')
           }
         } catch (error) {
+          console.error('Login error:', error)
           setError('Login failed. Please try again.')
+        } finally {
+          setLoading(false)
+        }
+      },
+
+      submitOtpVerification: async () => {
+        const { mfaEmail, otp, setLoading, setError, setRequireOTP } = get()
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+
+        if (!mfaEmail || !otp) {
+          setError('Please enter email and OTP')
+          return
+        }
+
+        if (otp.length !== 6) {
+          setError('OTP must be 6 digits')
+          return
+        }
+
+        setLoading(true)
+        setError(null)
+
+        try {
+          const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: mfaEmail, otp }),
+          })
+
+          const result = await response.json()
+
+          if (response.ok && result.success) {
+            console.log('✅ OTP Verified! Logging in...')
+            // Update store with user and token
+            get().login(result.data.user, result.data.token)
+            // Clear MFA state
+            setRequireOTP(false)
+            // Redirect to home
+            window.location.href = '/'
+          } else {
+            setError(result.message || 'OTP verification failed.')
+          }
+        } catch (error) {
+          console.error('OTP verification error:', error)
+          setError('OTP verification failed. Please try again.')
         } finally {
           setLoading(false)
         }
@@ -268,7 +340,8 @@ const useAuthStore = create<AuthStore>()(
       storage: createJSONStorage(() => localStorage), 
       partialize: (state) => ({ 
         user: state.user, 
-        isLoggedIn: state.isLoggedIn 
+        isLoggedIn: state.isLoggedIn,
+        token: state.token //
       }), // Only save user and login status
       onRehydrateStorage: () => (state) => {
         console.log('💧 AuthStore Hydrated:', state?.isLoggedIn ? 'User Logged In' : 'Guest Mode');

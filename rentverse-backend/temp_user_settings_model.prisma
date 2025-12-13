@@ -1,0 +1,16 @@
+/// User preferences and settings
+model UserSettings {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  language              String   @default("en")
+  currency              String   @default("MYR")
+  timezone              String   @default("Asia/Kuala_Lumpur")
+  notifications         Json     @default("{}")
+  privacy               Json     @default("{}")
+  preferences           Json     @default("{}")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}

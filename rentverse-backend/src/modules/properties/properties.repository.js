@@ -13,7 +13,34 @@ class PropertiesRepository {
       where,
       skip,
       take,
-      include: {
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        description: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        country: true,
+        price: true,
+        currencyCode: true,
+        bedrooms: true,
+        bathrooms: true,
+        areaSqm: true,
+        furnished: true,
+        isAvailable: true,
+        images: true,
+        latitude: true,
+        longitude: true,
+        placeId: true,
+        projectName: true,
+        developer: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        ownerId: true,
+        propertyTypeId: true,
         owner: {
           select: {
             id: true,
@@ -163,97 +190,11 @@ class PropertiesRepository {
       minLat,
       maxLng,
       maxLat,
-      limit,
+      limit = 1000,
       centerLng,
       centerLat,
       query,
     } = params;
-
-    // Build raw SQL query for maximum performance
-    let sql = `
-      SELECT 
-        p.id,
-        p.code,
-        p.title,
-        p.price,
-        p.currency_code as "currencyCode",
-        p.bedrooms,
-        p.bathrooms,
-        p.area_sqm as "areaSqm",
-        p.city,
-        p.furnished,
-        p.is_available as "isAvailable",
-        p.latitude,
-        p.longitude,
-        pt.name as "propertyType",
-        CASE 
-          WHEN array_length(p.images, 1) > 0 
-          THEN p.images[1] 
-          ELSE NULL 
-        END as thumbnail
-      FROM properties p
-      INNER JOIN property_types pt ON p.property_type_id = pt.id
-      WHERE 
-        p.status = 'APPROVED' 
-        AND p.is_available = true
-        AND p.latitude IS NOT NULL 
-        AND p.longitude IS NOT NULL
-        AND p.latitude BETWEEN $1 AND $3
-        AND p.longitude BETWEEN $2 AND $4
-    `;
-
-    const queryParams = [minLat, minLng, maxLat, maxLng];
-    let paramIndex = 5;
-
-    // Add text search if query provided
-    if (query && query.trim()) {
-      sql += ` AND (
-        p.title ILIKE $${paramIndex} 
-        OR p.city ILIKE $${paramIndex}
-        OR p.address ILIKE $${paramIndex}
-      )`;
-      queryParams.push(`%${query.trim()}%`);
-      paramIndex++;
-    }
-
-    // Add distance-based ordering if center coordinates provided
-    if (centerLng && centerLat) {
-      sql += ` ORDER BY 
-        ST_Distance(
-          ST_MakePoint(p.longitude, p.latitude)::geography,
-          ST_MakePoint($${paramIndex}, $${paramIndex + 1})::geography
-        ) ASC,
-        p.price ASC
-      `;
-      queryParams.push(centerLng, centerLat);
-    } else {
-      // Default ordering by price
-      sql += ` ORDER BY p.price ASC`;
-    }
-
-    sql += ` LIMIT $${queryParams.length + 1}`;
-    queryParams.push(limit);
-
-    try {
-      const results = await prisma.$queryRawUnsafe(sql, ...queryParams);
-      return results;
-    } catch (error) {
-      console.error('Raw query error:', error);
-      // Fallback to regular Prisma query if raw query fails
-      return await this.findForGeoJSONFallback({
-        minLng,
-        minLat,
-        maxLng,
-        maxLat,
-        limit,
-        query,
-      });
-    }
-  }
-
-  // Fallback method using regular Prisma query
-  async findForGeoJSONFallback(params) {
-    const { minLng, minLat, maxLng, maxLat, limit, query } = params;
 
     const where = {
       status: 'APPROVED',
@@ -370,7 +311,6 @@ class PropertiesRepository {
     });
   }
 
-  // Get counts by status for a specific owner
   async getStatusCounts(ownerId) {
     const statusCounts = await prisma.property.groupBy({
       by: ['status'],
@@ -382,7 +322,6 @@ class PropertiesRepository {
       },
     });
 
-    // Transform to object format
     const result = {
       DRAFT: 0,
       PENDING_REVIEW: 0,
@@ -391,14 +330,13 @@ class PropertiesRepository {
       ARCHIVED: 0,
     };
 
-    statusCounts.forEach(item => {
+    statusCounts.forEach((item) => {
       result[item.status] = item._count.status;
     });
 
     return result;
   }
 
-  // Get counts by availability for a specific owner
   async getAvailabilityCounts(ownerId) {
     const availabilityCounts = await prisma.property.groupBy({
       by: ['isAvailable'],
@@ -415,7 +353,7 @@ class PropertiesRepository {
       unavailable: 0,
     };
 
-    availabilityCounts.forEach(item => {
+    availabilityCounts.forEach((item) => {
       if (item.isAvailable) {
         result.available = item._count.isAvailable;
       } else {
@@ -426,7 +364,6 @@ class PropertiesRepository {
     return result;
   }
 
-  // Get average rating for a property
   async getAverageRating(propertyId) {
     const result = await prisma.propertyRating.aggregate({
       where: {

@@ -53,28 +53,30 @@ function RentsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
-  const { isLoggedIn } = useAuthStore()
+  
+  // FIX: Ambil token dan status login dari store
+  const { isLoggedIn, token } = useAuthStore()
 
   useEffect(() => {
     const fetchBookings = async () => {
+      // Tunggu sehingga token sedia
       if (!isLoggedIn) {
         setIsLoading(false)
         return
       }
 
-      try {
-        const token = localStorage.getItem('authToken')
-        if (!token) {
-          setError('Authentication token not found')
-          setIsLoading(false)
-          return
-        }
+      // Jika logged in tapi token belum ada (hydration issue), tunggu sekejap
+      if (!token) return;
 
-        const response = await fetch('/api/bookings/my-bookings', {
+      try {
+        // FIX: Pastikan guna URL backend yang betul (Port 5000)
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
+        
+        const response = await fetch(`${API_BASE}/api/bookings/my-bookings`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`, // Guna token dari store
           },
         })
 
@@ -98,17 +100,19 @@ function RentsPage() {
     }
 
     fetchBookings()
-  }, [isLoggedIn])
+  }, [isLoggedIn, token]) // Tambah token sebagai dependency
 
   const downloadRentalAgreement = async (bookingId: string) => {
     try {
       setDownloadingId(bookingId)
-      const token = localStorage.getItem('authToken')
+      
+      // FIX: Guna token dari store
       if (!token) {
         throw new Error('Authentication token not found')
       }
 
-      const response = await fetch(createApiUrl(`bookings/${bookingId}/rental-agreement`), {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/rental-agreement`, {
         method: 'GET',
         headers: {
           'accept': 'application/json',

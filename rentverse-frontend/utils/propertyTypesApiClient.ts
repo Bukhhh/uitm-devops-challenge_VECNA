@@ -1,6 +1,7 @@
 import type { PropertyTypesResponse } from '@/types/property'
+import { createApiUrl } from './apiConfig'
 
-const BASE_URL = 'https://rentverse-be.jokoyuliyanto.my.id/api'
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000'
 
 export class PropertyTypesApiClient {
   private static getAuthToken(): string | null {
@@ -22,10 +23,10 @@ export class PropertyTypesApiClient {
 
     try {
       console.log('Making request to property types API...')
-      console.log('URL:', `${BASE_URL}/property-types?page=1&limit=10`)
+      console.log('URL:', createApiUrl('property-types'))
       console.log('Headers:', headers)
 
-      const response = await fetch(`${BASE_URL}/property-types?page=1&limit=10`, {
+      const response = await fetch(createApiUrl('property-types'), {
         method: 'GET',
         headers,
         mode: 'cors',

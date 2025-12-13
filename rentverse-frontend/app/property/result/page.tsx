@@ -44,7 +44,8 @@ function ResultsPage() {
     }
     
     console.log('Using fallback map center')
-    return { lng: -74.006, lat: 40.7128 } // Fallback to NYC center
+    // --- THIS IS THE ONLY LINE THAT CHANGED ---
+    return { lng: 101.6953, lat: 3.1390 } // Fallback to Kuala Lumpur
   }, [mapData])
   
   const mapZoom = mapData?.depth || 12
@@ -77,6 +78,8 @@ function ResultsPage() {
         lat,
         popup: `
           <div class="p-3 max-w-xs">
+            ${property.images && property.images.length > 0 ?
+              `<img src="${property.images[0]}" alt="${property.title}" class="w-full h-32 object-cover rounded-lg mb-2" />` : ''}
             <h3 class="font-semibold text-sm mb-1">${property.title}</h3>
             <p class="text-xs text-gray-600 mb-1">${property.address}</p>
             <p class="text-xs text-gray-600 mb-2">${property.city}, ${property.state}</p>
@@ -145,7 +148,7 @@ function ResultsPage() {
                 style={{ height: '100%' }}
               >
                 {properties.map((property) => (
-                  <SwiperSlide key={property.id} className="!h-auto">
+                  <SwiperSlide key={property.id} className="h-auto!">
                     <div className="pr-4 mb-4">
                       <CardProperty property={property} />
                     </div>
@@ -153,7 +156,7 @@ function ResultsPage() {
                 ))}
 
                 {/* Pagination as last slide */}
-                <SwiperSlide className="!h-auto">
+                <SwiperSlide className="h-auto!">
                   <div className="py-8 flex justify-center items-center pr-4">
                     <Pagination
                       currentPage={1}
@@ -186,7 +189,7 @@ function ResultsPage() {
                 style={{ height: '100%' }}
               >
                 {getGroupedProperties(2).map((group, index) => (
-                  <SwiperSlide key={index} className="!h-auto">
+                  <SwiperSlide key={index} className="h-auto!">
                     <div className="grid grid-cols-2 gap-4 pr-4 mb-4">
                       {group.map((property) => (
                         <CardProperty key={property.id} property={property} />
@@ -196,7 +199,7 @@ function ResultsPage() {
                 ))}
 
                 {/* Pagination as last slide */}
-                <SwiperSlide className="!h-auto">
+                <SwiperSlide className="h-auto!">
                   <div className="py-8 flex justify-center items-center pr-4 col-span-2">
                     <Pagination
                       currentPage={1}
@@ -229,7 +232,7 @@ function ResultsPage() {
                 style={{ height: '100%' }}
               >
                 {properties.map((property) => (
-                  <SwiperSlide key={property.id} className="!h-auto">
+                  <SwiperSlide key={property.id} className="h-auto!">
                     <div className="pr-4 mb-4">
                       <CardProperty property={property} />
                     </div>
@@ -237,7 +240,7 @@ function ResultsPage() {
                 ))}
 
                 {/* Pagination as last slide */}
-                <SwiperSlide className="!h-auto">
+                <SwiperSlide className="h-auto!">
                   <div className="py-8 flex justify-center items-center pr-4">
                     <Pagination
                       currentPage={1}
@@ -270,7 +273,7 @@ function ResultsPage() {
                 style={{ height: '100%' }}
               >
                 {getGroupedProperties(2).map((group, index) => (
-                  <SwiperSlide key={index} className="!h-auto">
+                  <SwiperSlide key={index} className="h-auto!">
                     <div className="grid grid-cols-2 gap-4 pr-4 mb-4">
                       {group.map((property) => (
                         <CardProperty key={property.id} property={property} />
@@ -280,7 +283,7 @@ function ResultsPage() {
                 ))}
 
                 {/* Pagination as last slide */}
-                <SwiperSlide className="!h-auto">
+                <SwiperSlide className="h-auto!">
                   <div className="py-8 flex justify-center items-center pr-4 col-span-2">
                     <Pagination
                       currentPage={1}

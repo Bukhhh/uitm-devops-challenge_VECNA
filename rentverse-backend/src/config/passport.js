@@ -1,8 +1,8 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
-const GitHubStrategy = require('passport-github2').Strategy;
-const TwitterStrategy = require('passport-twitter').Strategy;
+// const FacebookStrategy = require('passport-facebook').Strategy; // Temporarily disabled
+// const GitHubStrategy = require('passport-github2').Strategy; // Temporarily disabled
+// const TwitterStrategy = require('passport-twitter').Strategy; // Temporarily disabled
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
@@ -153,7 +153,7 @@ passport.use(
   )
 );
 
-// Facebook OAuth Strategy
+/* // --- FACEBOOK OAUTH (DISABLED) ---
 passport.use(
   new FacebookStrategy(
     {
@@ -249,10 +249,10 @@ passport.use(
         return done(error, null);
       }
     }
-  )
-);
+  );
+*/ // --- END FACEBOOK OAUTH ---
 
-// GitHub OAuth Strategy
+/* // --- GITHUB OAUTH (DISABLED) ---
 passport.use(
   new GitHubStrategy(
     {
@@ -370,10 +370,10 @@ passport.use(
         return done(error, null);
       }
     }
-  )
-);
+  );
+*/ // --- END GITHUB OAUTH ---
 
-// Twitter OAuth Strategy
+/* // --- TWITTER OAUTH (DISABLED) ---
 passport.use(
   new TwitterStrategy(
     {
@@ -449,8 +449,10 @@ passport.use(
         return done(error, null);
       }
     }
-  )
-); // Apple Sign In handler (manual implementation since no official Passport strategy)
+  );
+*/ // --- END TWITTER OAUTH ---
+
+// Apple Sign In handler (manual implementation since no official Passport strategy)
 const handleAppleSignIn = async (appleToken, userInfo = null) => {
   try {
     // Verify Apple token

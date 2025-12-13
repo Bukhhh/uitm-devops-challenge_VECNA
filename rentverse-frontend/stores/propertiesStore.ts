@@ -47,7 +47,7 @@ type PropertiesStore = SearchBoxState & PropertiesState & PropertiesActions & {
     latMean: number
     longMean: number
     depth: number
-  } | null // Allow null initially
+  } | null 
 }
 
 const usePropertiesStore = create<PropertiesStore>((set, get) => ({
@@ -71,7 +71,7 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
     total: 0,
     pages: 0,
   },
-  mapData: null, // Start with null instead of default zeros
+  mapData: null,
   searchFilters: {
     page: 1,
     limit: 10,
@@ -181,17 +181,29 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
       if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString())
       if (filters?.bedrooms) params.append('bedrooms', filters.bedrooms.toString())
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+      // FIX: Use 127.0.0.1 to avoid localhost IPv4/IPv6 ambiguity on Windows
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
       const queryString = params.toString();
       const url = queryString 
         ? `${API_BASE}/api/properties?${queryString}` 
         : `${API_BASE}/api/properties`;
+        
+      console.log('Fetching properties from:', url);
+
+      // FIX: Check for token to enable personalized data (like favorites)
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add token if user is logged in
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       const response = await fetch(url, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       })
 
       if (!response.ok) {
@@ -200,19 +212,14 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
 
       const result: PropertiesResponse = await response.json()
 
-      console.log('Properties API response:', result)
-      console.log('Map data from API:', result.data?.maps)
-
       if (result.success) {
         set({
           properties: result.data.properties,
           filteredProperties: result.data.properties,
           pagination: result.data.pagination,
-          mapData: result.data.maps || null, // Ensure we handle missing maps data
+          mapData: result.data.maps || null, 
           searchFilters: filters || get().searchFilters,
         })
-        
-        console.log('Updated store with mapData:', result.data.maps)
       } else {
         setError('Failed to load properties')
       }
@@ -229,8 +236,6 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
   },
 
   addProperty: async (property: Omit<Property, 'id' | 'createdAt' | 'updatedAt'>) => {
-    // This would typically make an API call to create a new property
-    // For now, we'll just add it locally
     const newProperty: Property = {
       ...property,
       id: `prop_${Date.now()}`,
@@ -245,8 +250,6 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
   },
 
   updateProperty: async (id: string, updates: Partial<Property>) => {
-    // This would typically make an API call to update the property
-    // For now, we'll just update it locally
     set(state => ({
       properties: state.properties.map(p => 
         p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
@@ -258,8 +261,6 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
   },
 
   deleteProperty: async (id: string) => {
-    // This would typically make an API call to delete the property
-    // For now, we'll just remove it locally
     set(state => ({
       properties: state.properties.filter(p => p.id !== id),
       filteredProperties: state.filteredProperties.filter(p => p.id !== id),
@@ -276,7 +277,6 @@ const usePropertiesStore = create<PropertiesStore>((set, get) => ({
       const response = await PropertiesApiClient.logPropertyView(propertyId)
       
       if (response.success && response.data.property) {
-        // Update the property in the store with the updated view count
         const updatedProperty = response.data.property
         
         set(state => ({

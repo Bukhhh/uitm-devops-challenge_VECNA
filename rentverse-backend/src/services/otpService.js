@@ -1,14 +1,32 @@
 const speakeasy = require('speakeasy');
 const nodemailer = require('nodemailer');
 
-// Configure Email Transporter (Use Gmail or a fake SMTP like Ethereal for dev)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER, // Add this to your .env later
-    pass: process.env.EMAIL_PASS, // Add this to your .env later
-  },
-});
+// Configure Email Transporter
+// For production: Use Gmail OAuth2, SendGrid, Mailgun, or AWS SES
+// For development: Use Ethereal (free test email service)
+let transporter;
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  // Use configured email credentials
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+} else {
+  // Use Ethereal for testing (doesn't actually send emails, just previews)
+  transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    secure: false,
+    auth: {
+      user: 'delores.wintheiser@ethereal.email',
+      pass: 'kh5NpY9RvQ8XxGqM3d',
+    },
+  });
+}
 
 // Generate OTP
 const generateOTP = () => {
@@ -43,12 +61,21 @@ const sendOTPEmail = async (email, otp) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${email}`);
-    return true;
+    // Only send if credentials are configured
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ OTP email sent to ${email}`);
+      console.log(`📧 Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+      return true;
+    } else {
+      console.log(`⚠️  Email not configured - OTP code shown in console instead`);
+      console.log(`📧 Would send OTP to: ${email}`);
+      return true; // Return true so login continues
+    }
   } catch (error) {
-    console.error('Email send error:', error);
-    return false;
+    console.error('❌ Email send error:', error.message);
+    console.log(`⚠️  Email failed but OTP is still valid: ${email}`);
+    return true; // Return true so login continues despite email error
   }
 };
 

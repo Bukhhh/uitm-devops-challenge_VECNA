@@ -3,6 +3,29 @@ const { validationResult } = require('express-validator');
 
 class BookingsController {
   /**
+   * Get all bookings (admin only)
+   */
+  async getAllBookings(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const result = await bookingsService.getAllBookings(page, limit);
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error('Get all bookings error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  }
+
+  /**
    * Create new booking
    */
   async createBooking(req, res) {

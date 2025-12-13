@@ -58,6 +58,24 @@ const router = express.Router();
 /**
  * @swagger
  * /api/bookings:
+ *   get:
+ *     summary: Get all bookings (admin only)
+ *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bookings retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get('/', protect, authorize('ADMIN'), bookingsController.getAllBookings);
+
+/**
+ * @swagger
+ * /api/bookings:
  *   post:
  *     summary: Create a new booking
  *     tags: [Bookings]

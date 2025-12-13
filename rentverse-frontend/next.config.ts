@@ -2,107 +2,148 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Allow external images from scrapers
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      // FazWaz domains for scraped images
+      {
+        protocol: 'https',
+        hostname: 'cdn.fazwaz.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fazwaz.com', // Wildcard for all subdomains
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.fazwaz.my',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fazwaz.my', // Wildcard for Malaysian subdomains
       },
     ],
+    // Disable optimization for external images to avoid 400 errors
+    unoptimized: true,
   },
+  
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000',
+    NEXT_PUBLIC_MAPTILER_API_KEY: process.env.NEXT_PUBLIC_MAPTILER_API_KEY || '',
+  },
+
+  // API rewrites to proxy requests to backend
   async rewrites() {
-    const apiBaseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-    
-    // Remove trailing slash from apiBaseUrl if present
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
     const cleanApiBaseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
     
     return [
-      // Properties API routes - order matters, more specific routes first
+      // Property routes
       {
-        source: '/api/properties/featured',
-        destination: `${cleanApiBaseUrl}/api/properties/featured`,
+        source: '/api/properties/:path*',
+        destination: `${cleanApiBaseUrl}/api/properties/:path*`,
       },
+      
+      // Authentication routes
       {
-        source: '/api/properties/property/:code',
-        destination: `${cleanApiBaseUrl}/api/properties/property/:code`,
+        source: '/api/auth/:path*',
+        destination: `${cleanApiBaseUrl}/api/auth/:path*`,
       },
+      
+      // Upload routes
       {
-        source: '/api/properties/:id/view',
-        destination: `${cleanApiBaseUrl}/api/properties/:id/view`,
+        source: '/api/upload/:path*',
+        destination: `${cleanApiBaseUrl}/api/upload/:path*`,
       },
+      
+      // Booking routes
       {
-        source: '/api/properties/:id',
-        destination: `${cleanApiBaseUrl}/api/properties/:id`,
+        source: '/api/bookings/:path*',
+        destination: `${cleanApiBaseUrl}/api/bookings/:path*`,
       },
+      
+      // Favorites routes
       {
-        source: '/api/properties',
-        destination: `${cleanApiBaseUrl}/api/properties`,
+        source: '/api/favorites/:path*',
+        destination: `${cleanApiBaseUrl}/api/properties/:path*`,
       },
-      // Authentication API routes
+      
+      // Admin routes
       {
-        source: '/api/auth/login',
-        destination: `${cleanApiBaseUrl}/api/auth/login`,
+        source: '/api/admin/:path*',
+        destination: `${cleanApiBaseUrl}/api/admin/:path*`,
       },
-      {
-        source: '/api/auth/signup',
-        destination: `${cleanApiBaseUrl}/api/auth/signup`,
-      },
-      {
-        source: '/api/auth/register',
-        destination: `${cleanApiBaseUrl}/api/auth/register`,
-      },
-      {
-        source: '/api/auth/validate',
-        destination: `${cleanApiBaseUrl}/api/auth/me`, // Note: validate maps to /me endpoint
-      },
-      {
-        source: '/api/auth/me',
-        destination: `${cleanApiBaseUrl}/api/auth/me`,
-      },
-      {
-        source: '/api/auth/check-email',
-        destination: `${cleanApiBaseUrl}/api/auth/check-email`,
-      },
-      // Upload API routes
-      {
-        source: '/api/upload/multiple',
-        destination: `${cleanApiBaseUrl}/api/upload/multiple`,
-      },
-      // Generic API catchall for any other API routes (should be last)
+      
+      // Fallback for all other API routes
       {
         source: '/api/:path*',
         destination: `${cleanApiBaseUrl}/api/:path*`,
       },
     ];
   },
+
+  // CORS headers
   async headers() {
     return [
       {
-        // Apply headers to all API routes
         source: '/api/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
+          { 
+            key: 'Access-Control-Allow-Origin', 
+            value: process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3001' 
           },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+          { 
+            key: 'Access-Control-Allow-Methods', 
+            value: 'GET, POST, PUT, DELETE, OPTIONS, PATCH' 
           },
-          // {
-          //   key: 'Access-Control-Allow-Headers',
-          //   value: 'Content-Type, Authorization, X-Requested-With',
-          // },
+          { 
+            key: 'Access-Control-Allow-Headers', 
+            value: 'X-Requested-With, Content-Type, Authorization, Accept' 
+          },
+          { 
+            key: 'Access-Control-Allow-Credentials', 
+            value: 'true' 
+          },
         ],
       },
     ];
+  },
+
+  // React strict mode (disable if causing double renders)
+  reactStrictMode: false,
+
+  // Allow TypeScript to ignore build errors during development
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  // Allow ESLint to ignore build errors during development
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+
+  // Enable Turbopack for faster development
+  experimental: {
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
 };
 

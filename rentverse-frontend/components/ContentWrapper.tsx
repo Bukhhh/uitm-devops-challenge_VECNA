@@ -19,7 +19,9 @@ function ContentWrapper({ children, withFooter = true, searchBoxType = 'none' }:
         'relative',
         searchBoxType === 'full' ? 'pt-48' : 'pt-24',
       ])}>
-        {children}
+        <div className="px-6">
+          {children}
+        </div>
       </div>
       {withFooter && <Footer />}
     </>

@@ -61,8 +61,8 @@ const router = express.Router();
 /**
  * @swagger
  * tags:
- *   name: Upload
- *   description: File upload management API
+ *   - name: Upload
+ *     description: File upload management API
  */
 
 /**
@@ -85,7 +85,6 @@ const router = express.Router();
  *                 format: binary
  *               optimize:
  *                 type: boolean
- *                 description: Whether to optimize files (default true)
  *                 description: Whether to optimize images (default true)
  *     responses:
  *       200:

@@ -4,6 +4,7 @@
  */
 
 import type { PropertyListingData } from '@/stores/propertyListingStore'
+import { createApiUrl } from './apiConfig'
 
 export interface MinimalPropertyUploadRequest {
   code: string
@@ -95,7 +96,7 @@ export async function uploadProperty(
     // Debug: Log the request data
     console.log('Uploading property data:', JSON.stringify(propertyData, null, 2))
     
-    const response = await fetch('/api/properties', {
+    const response = await fetch(createApiUrl('properties'), {
       method: 'POST',
       headers: {
         'accept': 'application/json',

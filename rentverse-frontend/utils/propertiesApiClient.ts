@@ -84,7 +84,14 @@ export class PropertiesApiClient {
       
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          params.append(key, value.toString())
+          if (key === 'amenities' && Array.isArray(value)) {
+            // Handle amenities array by appending multiple values
+            value.forEach(amenityId => {
+              params.append('amenities', amenityId)
+            })
+          } else {
+            params.append(key, value.toString())
+          }
         }
       })
 

@@ -1,3 +1,4 @@
+
 const { prisma } = require('../../config/database');
 const pdfGenerationService = require('../../services/pdfGeneration.service');
 
@@ -347,6 +348,70 @@ class BookingsService {
         take: limit,
       }),
       prisma.lease.count({ where }),
+    ]);
+
+    const pages = Math.ceil(total / limit);
+
+    return {
+      bookings,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages,
+      },
+    };
+  }
+
+  /**
+   * Get all bookings (admin only)
+   * @param {number} page
+   * @param {number} limit
+   * @returns {Promise<Object>}
+   */
+  async getAllBookings(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [bookings, total] = await Promise.all([
+      prisma.lease.findMany({
+        include: {
+          property: {
+            select: {
+              id: true,
+              title: true,
+              address: true,
+              city: true,
+              images: true,
+              price: true,
+              currencyCode: true,
+            },
+          },
+          tenant: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              name: true,
+              phone: true,
+            },
+          },
+          landlord: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.lease.count(),
     ]);
 
     const pages = Math.ceil(total / limit);

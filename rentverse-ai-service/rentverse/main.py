@@ -1,8 +1,5 @@
-"""
-Main FastAPI application for RentVerse AI Service.
-"""
-
 import logging
+from rentverse.api.routes import security
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -79,6 +76,7 @@ app.add_middleware(ErrorHandlingMiddleware)
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(prediction.router, prefix="/api/v1")
 app.include_router(classification.router, prefix="/api/v1")
+app.include_router(security.router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])

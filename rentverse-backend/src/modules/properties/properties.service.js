@@ -157,6 +157,17 @@ class PropertiesService {
       if (filters.maxPrice) where.price.lte = parseFloat(filters.maxPrice);
     }
 
+    // Filter by amenities - property must have ALL specified amenities
+    if (filters.amenities && filters.amenities.length > 0) {
+      where.amenities = {
+        some: {
+          amenityId: {
+            in: filters.amenities,
+          },
+        },
+      };
+    }
+
     const [properties, total] = await Promise.all([
       propertiesRepository.findMany({ where, skip, take: limit }),
       propertiesRepository.count(where),

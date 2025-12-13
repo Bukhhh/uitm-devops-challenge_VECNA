@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator');
 
 // 🆕 AUTO-APPROVE PROPERTIES STATUS GLOBAL
 let propertyAutoApproveStatus = {
-  isEnabled: false, // Default: OFF (manual approval required)
+  isEnabled: true, // Default: ON (auto-approve for development)
   lastUpdated: new Date(),
   updatedBy: null,
 };
@@ -25,6 +25,7 @@ class PropertiesController {
         minPrice: req.query.minPrice,
         maxPrice: req.query.maxPrice,
         bedrooms: req.query.bedrooms,
+        amenities: req.query.amenities ? (Array.isArray(req.query.amenities) ? req.query.amenities : [req.query.amenities]) : undefined,
       };
 
       const result = await propertiesService.getAllProperties(

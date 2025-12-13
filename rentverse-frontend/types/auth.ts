@@ -16,6 +16,7 @@ export interface AuthState {
   isLoggedIn: boolean
   isLoading: boolean
   error: string | null
+  token: string | null;
 }
 
 // Authentication form data types

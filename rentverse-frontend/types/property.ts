@@ -160,7 +160,8 @@ export interface SearchFilters {
   minPrice?: number
   maxPrice?: number
   bedrooms?: number
-  
+  amenities?: string[] // Array of amenity IDs to filter by
+
   // Legacy fields for backward compatibility
   location?: string
   monthCount?: number
