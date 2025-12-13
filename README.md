@@ -271,10 +271,10 @@ docker-compose up -d
 
 ## 🤝 **Team Information**
 
-**Team Name:** [Your Team Name]
+**Team Name:** VECNA
 **Members:**
-- [Member 1] - [Role]
-- [Member 2] - [Role]
+- MOHAMAD BUKHARI BIN AHMAD HUZAIRI - [Role]
+- MUHAMAD ZULKARNAIN BIN SAMSUDIN - [Role]
 - [Member 3] - [Role]
 
 ## 📞 **Support**
