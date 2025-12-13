@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export', // Required for Capacitor mobile app
+
   images: {
     unoptimized: true, // Required for static export
     // Allow external images from scrapers
