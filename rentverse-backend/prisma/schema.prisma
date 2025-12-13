@@ -48,10 +48,10 @@ model User {
   role           Role      @default(USER)
 
   // --- 🔐 NEW SECURITY FIELDS (MODULE 1) ---
-  mfaEnabled     Boolean   @default(false)      
-  mfaSecret      String?                       
-  otp            String?                       
-  otpExpires     DateTime?                      
+  mfaEnabled     Boolean   @default(false)
+  mfaSecret      String?
+  otp            String?
+  otpExpires     DateTime?
   // ------------------------------------------
 
   isActive       Boolean   @default(true)
@@ -67,7 +67,7 @@ model User {
   twitterId      String?   @unique
 
   // --- MODULE 5: NEW INVERSE RELATION (TAMBAH INI) ---
-  activityLogs      ActivityLog[] 
+  activityLogs      ActivityLog[]
   // ----------------------------------------------------
 
   // Relations (Keep these exactly as they were)
@@ -121,27 +121,26 @@ model Property {
   isAvailable    Boolean                  @default(true)
   /// Kumpulan URL gambar untuk listing ini (urutan = urutan tampilan).
   images         String[]                 @default([])
-  
+
   // Informasi lokasi dan geografis
   latitude       Float?
   longitude      Float?
   placeId        String?
-  geom           Unsupported("geometry")? @map("geom")
-  
+
   // Informasi developer/proyek (opsional)
   projectName    String?
   developer      String?
-  
+
   // Metadata sistem
   code           String                   @unique
   status         ListingStatus            @default(PENDING_REVIEW)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
-  
+
   // Relasi
   ownerId        String
   propertyTypeId String
-  
+
   leases         Lease[]
   approvals      ListingApproval[]
   predictions    PricePrediction[]
@@ -335,15 +334,6 @@ model PropertyFavorite {
   @@map("property_favorites")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model spatial_ref_sys {
-  srid      Int     @id
-  auth_name String? @db.VarChar(256)
-  auth_srid Int?
-  srtext    String? @db.VarChar(2048)
-  proj4text String? @db.VarChar(2048)
-}
-
 /// Peran pengguna di sistem.
 enum Role {
   USER
@@ -414,8 +404,8 @@ model ActivityLog {
   details   String?  // e.g., "IP: 123.45.67.89, Reason: Late Night Login"
   ipAddress String?
   createdAt DateTime @default(now())
-  
+
   user      User?    @relation(fields: [userId], references: [id])
-  
+
   @@map("activity_logs")
 }
