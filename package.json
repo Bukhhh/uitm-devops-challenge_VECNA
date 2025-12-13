@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:ai\"",
     "dev:backend": "cd rentverse-backend && npm start",
     "dev:frontend": "cd rentverse-frontend && npm run dev",
-    "dev:ai": "cd rentverse-ai-service && python -m rentverse.cli serve",
+    "dev:ai": "cd rentverse-ai-service && python -m rentverse.cli start",
     "install:all": "npm install && cd rentverse-backend && npm install && cd ../rentverse-frontend && npm install && cd ../rentverse-ai-service && pip install -r requirements.txt",
     "setup": "npm run install:all && cd rentverse-backend && npx prisma migrate dev && npx prisma db seed",
     "test": "cd rentverse-backend && npm test",
