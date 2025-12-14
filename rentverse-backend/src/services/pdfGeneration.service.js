@@ -130,7 +130,7 @@ class PDFGenerationService {
 
     fs.writeFileSync(filePath, pdfBuffer);
 
-    const serverUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/api/files/pdfs/${uniqueFileName}`;
+    const serverUrl = `${process.env.BASE_URL || 'https://rentverse-backend-production.up.railway.app'}/api/files/pdfs/${uniqueFileName}`;
 
     return {
       fileName: uniqueFileName,
@@ -286,7 +286,7 @@ class PDFGenerationService {
     
     // Construct local URL if needed
     if (rentalAgreement.pdfUrl && !rentalAgreement.pdfUrl.startsWith('http')) {
-         rentalAgreement.pdfUrl = `${process.env.BASE_URL || 'http://localhost:5000'}${rentalAgreement.pdfUrl}`;
+         rentalAgreement.pdfUrl = `${process.env.BASE_URL || 'https://rentverse-backend-production.up.railway.app'}${rentalAgreement.pdfUrl}`;
     }
 
     return { success: true, data: rentalAgreement };

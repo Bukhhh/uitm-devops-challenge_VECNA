@@ -2,13 +2,20 @@
 
 import Link from "next/link"
 import { Search, Heart, User } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
+import useAuthStore from '@/stores/authStore'
 
 type NavItem = 'explore' | 'wishlists' | 'login'
 
 function NavBarBottom() {
   const [activeTab, setActiveTab] = useState<NavItem>('explore')
+  const [isMounted, setIsMounted] = useState(false)
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const handleTabClick = (tab: NavItem) => {
     setActiveTab(tab)
@@ -23,22 +30,22 @@ function NavBarBottom() {
       <ul className="flex items-center justify-around py-3 px-4">
         <li>
           <Link
-            href='/'
+            href='/property'
             onClick={() => handleTabClick('explore')}
             className="flex flex-col items-center space-y-1 group"
           >
             <Search
               size={24}
               className={`transition-colors duration-200 ${
-                activeTab === 'explore' 
-                  ? 'text-teal-600' 
+                activeTab === 'explore'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             />
             <span
               className={`text-xs font-medium transition-colors duration-200 ${
-                activeTab === 'explore' 
-                  ? 'text-teal-600' 
+                activeTab === 'explore'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             >
@@ -48,22 +55,22 @@ function NavBarBottom() {
         </li>
         <li>
           <Link
-            href='/'
+            href='/wishlist'
             onClick={() => handleTabClick('wishlists')}
             className="flex flex-col items-center space-y-1 group"
           >
             <Heart
               size={24}
               className={`transition-colors duration-200 ${
-                activeTab === 'wishlists' 
-                  ? 'text-teal-600' 
+                activeTab === 'wishlists'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             />
             <span
               className={`text-xs font-medium transition-colors duration-200 ${
-                activeTab === 'wishlists' 
-                  ? 'text-teal-600' 
+                activeTab === 'wishlists'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             >
@@ -73,26 +80,26 @@ function NavBarBottom() {
         </li>
         <li>
           <Link
-            href='/'
+            href={isLoggedIn ? '/rents' : '/auth/login'}
             onClick={() => handleTabClick('login')}
             className="flex flex-col items-center space-y-1 group"
           >
             <User
               size={24}
               className={`transition-colors duration-200 ${
-                activeTab === 'login' 
-                  ? 'text-teal-600' 
+                activeTab === 'login'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             />
             <span
               className={`text-xs font-medium transition-colors duration-200 ${
-                activeTab === 'login' 
-                  ? 'text-teal-600' 
+                activeTab === 'login'
+                  ? 'text-teal-600'
                   : 'text-slate-400 group-hover:text-slate-600'
               }`}
             >
-              Log in
+              {isLoggedIn ? 'Profile' : 'Log in'}
             </span>
           </Link>
         </li>
