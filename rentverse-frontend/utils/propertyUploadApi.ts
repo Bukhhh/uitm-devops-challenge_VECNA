@@ -95,7 +95,7 @@ export async function uploadProperty(
   try {
     // Debug: Log the request data
     console.log('Uploading property data:', JSON.stringify(propertyData, null, 2))
-    
+
     const response = await fetch(createApiUrl('properties'), {
       method: 'POST',
       headers: {
@@ -112,7 +112,7 @@ export async function uploadProperty(
       try {
         const errorData = await response.json()
         console.error('Backend error response:', errorData)
-        
+
         if (errorData.message) {
           errorMessage = errorData.message
         } else if (errorData.error) {
@@ -140,7 +140,7 @@ export async function uploadProperty(
     }
 
     const data: PropertyUploadResponse = await response.json()
-    
+
     if (!data.success) {
       throw new Error(data.message || 'Upload failed')
     }
@@ -167,14 +167,14 @@ function generatePropertyCode(): string {
 export function mapPropertyListingToUploadRequest(data: PropertyListingData): MinimalPropertyUploadRequest {
   // Ensure we have a propertyTypeId - use fallback if not available
   const propertyTypeId = data.propertyTypeId || getDefaultPropertyTypeId(data.propertyType)
-  
+
   if (!propertyTypeId) {
     console.warn('No propertyTypeId available, this may cause upload issues')
   }
 
   // Validate and prepare images array
   const images = Array.isArray(data.images) ? data.images.filter(url => url && url.trim() !== '') : []
-  
+
   if (images.length === 0) {
     console.warn('No images found in property data - property will be uploaded without images')
   } else {
@@ -203,7 +203,7 @@ export function mapPropertyListingToUploadRequest(data: PropertyListingData): Mi
     images: images, // Include validated Cloudinary images
     amenityIds: []
   }
-  
+
   console.log('Property data with dynamic propertyTypeId and images:', JSON.stringify(payload, null, 2))
   console.log('Images included:', payload.images.length, 'URLs')
   return payload
@@ -214,20 +214,20 @@ export function mapPropertyListingToUploadRequest(data: PropertyListingData): Mi
  * This is a fallback for cases where dynamic ID isn't available
  */
 function getDefaultPropertyTypeId(propertyType?: string): string {
-  // These should be replaced with actual IDs from your backend
-  // For now, we'll use the fallback IDs for development
+  // Use actual IDs from the database based on the API response
   const fallbackMap: Record<string, string> = {
-    'Apartment': 'fallback-apartment-id',
-    'Condominium': 'fallback-condominium-id', 
-    'House': 'fallback-house-id',
-    'Townhouse': 'fallback-townhouse-id',
-    'Villa': 'fallback-villa-id',
-    'Penthouse': 'fallback-penthouse-id',
-    'Studio': 'fallback-studio-id',
+    'Apartment': '1', // ID "1" with code "APT"
+    'Condominium': '1', // Default to Apartment if not found
+    'House': '2', // ID "2" with code "HOUSE"
+    'Townhouse': '2', // Default to House if not found
+    'Villa': '2', // Default to House if not found
+    'Penthouse': '1', // Default to Apartment if not found
+    'Studio': '1', // Default to Apartment if not found
   }
-  
-  console.warn(`Using fallback propertyTypeId for "${propertyType}". Consider implementing dynamic property type ID mapping.`)
-  return fallbackMap[propertyType || ''] || 'fallback-apartment-id'
+
+  const selectedId = fallbackMap[propertyType || ''] || '1' // Default to Apartment ID
+  console.log(`Using propertyTypeId "${selectedId}" for property type "${propertyType}"`)
+  return selectedId
 }
 
 /**
@@ -243,15 +243,15 @@ export async function mapPropertyListingToUploadRequestWithDynamicTypes(
     try {
       // Import here to avoid circular dependencies
       const { PropertyTypesApiClient } = await import('@/utils/propertyTypesApiClient')
-      
+
       const response = await PropertyTypesApiClient.getPropertyTypes()
-      
+
       if (response.success && response.data) {
-        const matchingType = response.data.find(type => 
-          type.name === data.propertyType || 
+        const matchingType = response.data.find(type =>
+          type.name === data.propertyType ||
           type.code === data.propertyType?.toUpperCase()
         )
-        
+
         if (matchingType) {
           propertyTypeId = matchingType.id
           console.log(`Found dynamic propertyTypeId: ${propertyTypeId} for ${data.propertyType}`)
@@ -269,7 +269,7 @@ export async function mapPropertyListingToUploadRequestWithDynamicTypes(
 
   // Validate and prepare images array
   const images = Array.isArray(data.images) ? data.images.filter(url => url && url.trim() !== '') : []
-  
+
   if (images.length === 0) {
     console.warn('No images found in property data - property will be uploaded without images')
   } else {
