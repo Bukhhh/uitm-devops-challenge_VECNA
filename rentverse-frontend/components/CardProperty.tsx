@@ -6,6 +6,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { MapPin, Bed, Bath, Maximize, Star, Heart } from 'lucide-react'
 import { Property } from '@/types/property'
+import { FavoritesApiClient } from '@/utils/favoritesApiClient'
+import useAuthStore from '@/stores/authStore'
+import { useRouter } from 'next/navigation'
 
 interface CardPropertyProps {
   property: Property
@@ -13,6 +16,11 @@ interface CardPropertyProps {
 
 export default function CardProperty({ property }: CardPropertyProps) {
   const [imageError, setImageError] = useState(false)
+  const [isFavoriting, setIsFavoriting] = useState(false)
+  const [favoritedState, setFavoritedState] = useState(property.isFavorited || false)
+  
+  const { isLoggedIn } = useAuthStore()
+  const router = useRouter()
   
   // Format harga - SUPPORT string | number
   const formatPrice = (price: string | number, currencyCode: string) => {
@@ -43,6 +51,41 @@ export default function CardProperty({ property }: CardPropertyProps) {
   const getImageUrl = (url: string) => {
     if (!url) return null
     return url
+  }
+
+  // Handle favorite button click
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!isLoggedIn) {
+      // Redirect to login if not authenticated
+      router.push('/auth/login')
+      return
+    }
+
+    if (isFavoriting) return // Prevent multiple clicks
+
+    setIsFavoriting(true)
+    
+    try {
+      const result = await FavoritesApiClient.toggleFavorite(property.id)
+      
+      if (result.success) {
+        // Update local state
+        setFavoritedState(result.data.isFavorited)
+        
+        // Optionally update the parent component or global state here
+        // For now, we'll just log the result
+        console.log(`Property ${property.id} ${result.data.isFavorited ? 'added to' : 'removed from'} favorites`)
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      // Show user-friendly error message
+      alert('Failed to update favorite. Please try again.')
+    } finally {
+      setIsFavoriting(false)
+    }
   }
 
   // Fallback image URL - use a more generic property placeholder
@@ -76,16 +119,16 @@ export default function CardProperty({ property }: CardPropertyProps) {
           
           {/* Favorite button */}
           <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              // Handle favorite logic
-            }}
-            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
+            onClick={handleFavoriteClick}
+            disabled={isFavoriting}
+            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors disabled:opacity-50"
+            title={isLoggedIn ? (favoritedState ? 'Remove from favorites' : 'Add to favorites') : 'Login to save favorites'}
           >
             <Heart
               size={20}
-              className={`${property.isFavorited ? 'fill-red-500 text-red-500' : 'text-slate-700'}`}
+              className={`${favoritedState ? 'fill-red-500 text-red-500' : 'text-slate-700'} ${
+                isFavoriting ? 'animate-pulse' : ''
+              }`}
             />
           </button>
           
@@ -124,7 +167,6 @@ export default function CardProperty({ property }: CardPropertyProps) {
               {property.title}
             </h3>
             <span className="text-lg font-bold text-teal-600">
-              {/* Panggil dengan parameter yang betul */}
               {formatPrice(property.price, property.currencyCode)}
               <span className="text-sm font-normal text-slate-500">/month</span>
             </span>

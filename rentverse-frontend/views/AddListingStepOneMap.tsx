@@ -85,6 +85,60 @@ function AddListingStepOneMap() {
     }
   }, [])
 
+  // Function to update marker position
+  const updateMarkerPosition = useCallback((lat: number, lng: number) => {
+    // Remove existing marker
+    if (marker.current) {
+      marker.current.remove()
+    }
+
+    // Add new marker at position
+    marker.current = new maptilersdk.Marker({
+      color: '#1A6B5E', // teal color
+      draggable: true
+    })
+      .setLngLat([lng, lat])
+      .addTo(map.current!)
+
+    // Add drag event handlers
+    marker.current.on('dragend', (e) => {
+      const markerLngLat = e.target.getLngLat()
+      const { lng: dragLng, lat: dragLat } = markerLngLat
+      
+      console.log('Marker dragged to:', dragLat, dragLng)
+      
+      // Update selected location with dragged coordinates
+      setSelectedLocation({
+        name: `Custom Location`,
+        imageUrl: '',
+        latitude: dragLat,
+        longitude: dragLng,
+      })
+
+      setSearchQuery(formatCoordinates(dragLat, dragLng))
+      
+      // Auto-fill address unless in manual mode
+      if (!manualMode) {
+        handleAutoFillAddress(dragLat, dragLng)
+      }
+    })
+
+    // Update selected location with clicked coordinates
+    setSelectedLocation({
+      name: `Custom Location`,
+      imageUrl: '',
+      latitude: lat,
+      longitude: lng,
+    })
+
+    setSearchQuery(formatCoordinates(lat, lng))
+    
+    // Auto-fill address unless in manual mode
+    if (!manualMode) {
+      handleAutoFillAddress(lat, lng)
+    }
+  }, [handleAutoFillAddress, manualMode])
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return
@@ -104,33 +158,7 @@ function AddListingStepOneMap() {
     // Add click handler for map
     map.current.on('click', (e) => {
       const { lng, lat } = e.lngLat
-
-      // Remove existing marker
-      if (marker.current) {
-        marker.current.remove()
-      }
-
-      // Add new marker at clicked location
-      marker.current = new maptilersdk.Marker({
-        color: '#1A6B5E', // red-500
-      })
-        .setLngLat([lng, lat])
-        .addTo(map.current!)
-
-      // Update selected location with clicked coordinates
-      setSelectedLocation({
-        name: `Custom Location`,
-        imageUrl: '',
-        latitude: lat,
-        longitude: lng,
-      })
-
-      setSearchQuery(formatCoordinates(lat, lng))
-      
-      // Auto-fill address unless in manual mode
-      if (!manualMode) {
-        handleAutoFillAddress(lat, lng)
-      }
+      updateMarkerPosition(lat, lng)
     })
 
     return () => {
@@ -142,7 +170,7 @@ function AddListingStepOneMap() {
         map.current = null
       }
     }
-  }, [handleAutoFillAddress, manualMode, selectedLocation])
+  }, [updateMarkerPosition])
 
   // Update map center and marker when location changes
   useEffect(() => {
@@ -160,12 +188,36 @@ function AddListingStepOneMap() {
 
       // Add new marker
       marker.current = new maptilersdk.Marker({
-        color: '#1A6B5E', // red-500
+        color: '#1A6B5E', // teal color
+        draggable: true
       })
         .setLngLat([selectedLocation.longitude, selectedLocation.latitude])
         .addTo(map.current)
+
+      // Add drag event handlers
+      marker.current.on('dragend', (e) => {
+        const markerLngLat = e.target.getLngLat()
+        const { lng: dragLng, lat: dragLat } = markerLngLat
+        
+        console.log('Marker dragged to:', dragLat, dragLng)
+        
+        // Update selected location with dragged coordinates
+        setSelectedLocation({
+          name: `Custom Location`,
+          imageUrl: '',
+          latitude: dragLat,
+          longitude: dragLng,
+        })
+
+        setSearchQuery(formatCoordinates(dragLat, dragLng))
+        
+        // Auto-fill address unless in manual mode
+        if (!manualMode) {
+          handleAutoFillAddress(dragLat, dragLng)
+        }
+      })
     }
-  }, [selectedLocation])
+  }, [selectedLocation, handleAutoFillAddress, manualMode])
 
   useEffect(() => {
     // Filter locations based on search query
@@ -212,10 +264,10 @@ function AddListingStepOneMap() {
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="font-serif text-3xl text-slate-900">
-              Where&apos;s your place located?
+              Where's your place located?
             </h2>
             <p className="text-lg text-slate-600">
-              Your address is only shared with guests after they&apos;ve made a reservation.
+              Your address is only shared with guests after they've made a reservation.
             </p>
           </div>
 

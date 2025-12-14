@@ -3,6 +3,8 @@
  * Calls the Rentverse Backend API for price recommendations
  */
 
+import type { PropertyListingData } from '@/stores/propertyListingStore'
+
 export interface PriceRecommendationRequest {
   area: number
   bathrooms: number
@@ -20,6 +22,20 @@ export interface PriceRecommendationResponse {
     min: number
   }
   status: string
+}
+
+/**
+ * Map property listing data to API request format
+ */
+export function mapPropertyDataToAIRequest(data: PropertyListingData): PriceRecommendationRequest {
+  return {
+    area: data.areaSqm || 0,
+    bathrooms: data.bathrooms || 1,
+    bedrooms: data.bedrooms || 1,
+    furnished: data.amenities.includes('furnished') ? 'Yes' : 'No',
+    location: (data.city && data.state) ? `${data.city}, ${data.state}` : 'Unknown',
+    property_type: data.propertyType || 'APARTMENT'
+  }
 }
 
 import { createApiUrl } from './apiConfig'
