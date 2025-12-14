@@ -11,6 +11,19 @@ from .models.ml_models import get_model
 from .core.exceptions import ModelNotFoundError
 from .config import get_settings
 
+# Fix for pickle error: Define the missing class that the model expects
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class ImprovedDataPreprocessor(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        pass
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,  # Changed from INFO to DEBUG
@@ -42,7 +55,7 @@ async def lifespan(app: FastAPI):
     logger.info("RentVerse AI Service started successfully")
 
     yield
-    
+
     # Shutdown
     logger.info("Shutting down RentVerse AI Service...")
 
