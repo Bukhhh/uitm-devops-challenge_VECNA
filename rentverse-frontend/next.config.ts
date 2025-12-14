@@ -1,12 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
-  // Disable Turbopack to avoid lightningcss issues
-  experimental: {
-    turbo: false
-  },
-
   images: {
     unoptimized: true, // Required for static export
     // Allow external images from scrapers
