@@ -531,7 +531,7 @@ router.post(
     body('title').notEmpty().trim(),
     body('address').notEmpty().trim(),
     body('price').isFloat({ min: 0 }),
-    body('propertyTypeId').notEmpty().isUUID(),
+    body('propertyTypeId').notEmpty().isString(),
   ],
   propertiesController.createProperty,
   handleUploadError
