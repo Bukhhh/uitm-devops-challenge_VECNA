@@ -308,7 +308,7 @@ function AddListingStepOneMap() {
                           onClick={() => handleLocationSelect(location)}
                           className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-100 last:border-b-0"
                         >
-                          <MapPin size={16} className="text-slate-400 flex-shrink-0" />
+                          <MapPin size={16} className="text-slate-400 shrink-0" />
                           <span className="text-slate-900">{location.name}</span>
                         </button>
                       ))
