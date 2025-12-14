@@ -1,7 +1,6 @@
 # Rentverse Frontend
 
-> **A comprehensive rental property platform that connects property owners with tenants through an intuitive, modern web
-application.**
+> **A comprehensive rental property platform that connects property owners with tenants through an intuitive, modern web application.**
 
 Rentverse is a full-featured property rental platform built with cutting-edge web technologies. It provides a seamless
 experience for property discovery, management, and rental transactions. The platform caters to both property owners
@@ -76,13 +75,13 @@ these challenges by:
 
 ### **Frontend Framework**
 
-- **Next.js 15**: Latest version with App Router and Turbopack for lightning-fast development
-- **React 19**: Modern React with latest features and performance improvements
+- **Next.js 16**: Latest version with App Router and Turbopack for lightning-fast development
+- **React 18**: Modern React with latest features and performance improvements
 - **TypeScript**: Full type safety throughout the application
 
 ### **Styling & UI**
 
-- **Tailwind CSS 4**: Utility-first CSS framework for rapid UI development
+- **Tailwind CSS 3**: Utility-first CSS framework for rapid UI development
 - **Lucide React**: Beautiful, customizable icons
 - **React Icons**: Additional icon library for comprehensive coverage
 - **Swiper**: Touch-enabled sliders for image galleries
@@ -99,7 +98,7 @@ these challenges by:
 
 ### **Development Tools**
 
-- **Bun**: Ultra-fast JavaScript runtime and package manager
+- **npm**: JavaScript package manager
 - **ESLint**: Code quality and consistency
 - **PostCSS**: CSS processing and optimization
 
@@ -167,7 +166,7 @@ rentverse-frontend/
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js 18+** or **Bun** (recommended)
+- **Node.js 18+**
 - **Git** for version control
 - A **MapTiler API key** for map functionality
 
@@ -181,10 +180,7 @@ Before you begin, ensure you have the following installed:
 
 2. **Install Dependencies**
    ```bash
-   # Using Bun (recommended for performance)
-   bun install
-   
-   # Or using npm
+   # Using npm
    npm install
    ```
 
@@ -212,15 +208,11 @@ Before you begin, ensure you have the following installed:
 
 4. **Start Development Server**
    ```bash
-   # Using Bun with Turbopack (fastest)
-   bun dev
-   
-   # Or using npm
    npm run dev
    ```
 
 5. **Access the Application**
-   Open [http://localhost:3000](http://localhost:3000) in your browser
+   Open [http://localhost:3001](http://localhost:3001) in your browser
 
 ## 🏗 Application Architecture
 
@@ -254,7 +246,7 @@ App Layout (layout.tsx)
 
 ### Routing Strategy
 
-- **App Router**: Next.js 15 App Router for file-based routing
+- **App Router**: Next.js 16 App Router for file-based routing
 - **Dynamic Routes**: `[id]` for property details, user profiles
 - **Protected Routes**: Authentication checks for sensitive pages
 - **API Routes**: Server-side API endpoints for backend communication
@@ -265,19 +257,19 @@ App Layout (layout.tsx)
 
 ```bash
 # Development with hot reloading
-bun dev
+npm run dev
 
 # Production build
-bun run build
+npm run build
 
 # Start production server
-bun start
+npm start
 
 # Code linting
-bun run lint
+npm run lint
 
 # Type checking
-bun run type-check
+npm run type-check
 ```
 
 ### Code Quality Standards
@@ -362,13 +354,13 @@ bun run type-check
 
 ```bash
 # Build for production
-bun run build
+npm run build
 
 # Start production server
-bun start
+npm start
 
 # Or use PM2 for process management
-pm2 start "bun start" --name rentverse-frontend
+pm2 start "npm start" --name rentverse-frontend
 ```
 
 ## 📊 Performance Optimizations
@@ -424,8 +416,8 @@ We welcome contributions to make Rentverse even better!
 
 **🏗️ Build failures**
 
-- Clear node_modules and reinstall: `rm -rf node_modules && bun install`
-- Check for TypeScript errors: `bun run type-check`
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+- Check for TypeScript errors: `npm run type-check`
 - Verify all environment variables are set
 
 **🎨 Styling issues**
@@ -436,7 +428,7 @@ We welcome contributions to make Rentverse even better!
 
 ### Development Tips
 
-- Use `bun dev` for fastest development experience
+- Use `npm run dev` for development
 - Enable React DevTools for component debugging
 - Use browser Network tab to monitor API calls
 - Check console for errors and warnings
