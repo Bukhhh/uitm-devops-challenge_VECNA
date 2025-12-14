@@ -6,7 +6,7 @@
  * Falls back to production URL if not set
  */
 export const getApiBaseUrl = (): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://rentverse-production.up.railway.app'
   
   // Remove trailing slash if present
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
@@ -17,7 +17,7 @@ export const getApiBaseUrl = (): string => {
  * Falls back to production URL if not set
  */
 export const getAiServiceBaseUrl = (): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'http://rentverse-ai.jokoyuliyanto.my.id'
+  const baseUrl = process.env.NEXT_PUBLIC_AI_SERVICE_URL || 'https://rentverse-production.up.railway.app'
   
   // Remove trailing slash if present
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl

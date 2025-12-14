@@ -1,32 +1,10 @@
 const speakeasy = require('speakeasy');
-const nodemailer = require('nodemailer');
+const enhancedEmailService = require('./enhancedEmailService');
 
-// Configure Email Transporter
-// For production: Use Gmail OAuth2, SendGrid, Mailgun, or AWS SES
-// For development: Use Ethereal (free test email service)
-let transporter;
-
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  // Use configured email credentials
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-} else {
-  // Use Ethereal for testing (doesn't actually send emails, just previews)
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'delores.wintheiser@ethereal.email',
-      pass: 'kh5NpY9RvQ8XxGqM3d',
-    },
-  });
-}
+/**
+ * Enhanced OTP Service with Production-Ready Email Support
+ * This service generates OTP codes and sends them via email with robust error handling
+ */
 
 // Generate OTP
 const generateOTP = () => {
@@ -50,33 +28,61 @@ const verifyOTP = (token, secret) => {
   });
 };
 
-// Send OTP via Email
-const sendOTPEmail = async (email, otp) => {
-  const mailOptions = {
-    from: '"Rentverse Security" <no-reply@rentverse.com>',
-    to: email,
-    subject: 'Your Login Verification Code',
-    text: `Your verification code is: ${otp}. It expires in 5 minutes.`,
-    html: `<h3>Your Verification Code</h3><h1>${otp}</h1><p>This code expires in 5 minutes.</p>`,
-  };
-
+// Send OTP via Enhanced Email Service
+const sendOTPEmail = async (email, otp, userName = 'User') => {
   try {
-    // Only send if credentials are configured
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✅ OTP email sent to ${email}`);
-      console.log(`📧 Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+    console.log(`📧 Sending OTP to ${email} via enhanced email service`);
+    
+    // Use the enhanced email service
+    const result = await enhancedEmailService.sendOTPEmail(email, otp, userName);
+    
+    if (result.success) {
+      console.log(`✅ OTP sent successfully to ${email}`);
+      if (result.fallback) {
+        console.log(`⚠️ Using fallback mode - check console logs for OTP`);
+      }
       return true;
     } else {
-      console.log(`⚠️  Email not configured - OTP code shown in console instead`);
-      console.log(`📧 Would send OTP to: ${email}`);
-      return true; // Return true so login continues
+      console.error(`❌ Failed to send OTP to ${email}:`, result.error);
+      return false;
     }
   } catch (error) {
-    console.error('❌ Email send error:', error.message);
-    console.log(`⚠️  Email failed but OTP is still valid: ${email}`);
-    return true; // Return true so login continues despite email error
+    console.error(`❌ Error in sendOTPEmail:`, error.message);
+    // Log OTP as final fallback
+    console.log(`🔄 Emergency OTP fallback for ${email}: ${otp}`);
+    return false;
   }
 };
 
-module.exports = { generateOTP, verifyOTP, sendOTPEmail };
+// Health check for OTP service
+const healthCheck = async () => {
+  const emailHealth = await enhancedEmailService.healthCheck();
+  
+  return {
+    status: 'healthy',
+    email: emailHealth,
+    timestamp: new Date().toISOString(),
+    services: {
+      otp_generation: true,
+      otp_verification: true,
+      email_delivery: emailHealth.status === 'healthy'
+    }
+  };
+};
+
+// Get service statistics
+const getStats = () => {
+  return {
+    provider: enhancedEmailService.getConfigType(),
+    configured: enhancedEmailService.isConfigured,
+    timestamp: new Date().toISOString()
+  };
+};
+
+module.exports = { 
+  generateOTP, 
+  verifyOTP, 
+  sendOTPEmail,
+  healthCheck,
+  getStats
+};

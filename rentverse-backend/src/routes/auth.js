@@ -24,7 +24,7 @@ const { passport, handleAppleSignIn } = require('../config/passport');
 // Import Services (Clean separation of concerns)
 const otpService = require('../services/otpService');
 const aiService = require('../services/aiIntegration.service');
-const logger = require('../services/activityLogger');
+const logger = require('../utils/logger');
 
 // Import Middleware
 const { protect, authorize } = require('../middleware/auth');
