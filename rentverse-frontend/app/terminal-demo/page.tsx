@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState } from 'react'
 import TerminalEmulator from '@/components/terminal/TerminalEmulator'
 import ContentWrapper from '@/components/ContentWrapper'
