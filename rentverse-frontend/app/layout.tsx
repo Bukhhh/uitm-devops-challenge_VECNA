@@ -5,7 +5,7 @@ import './globals.css'
 
 
 
-import '@maptiler/sdk/dist/maptiler-sdk.css'
+
 import clsx from 'clsx'
 import AuthInitializer from '@/components/AuthInitializer'
 
