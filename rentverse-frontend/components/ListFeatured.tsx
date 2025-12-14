@@ -5,6 +5,8 @@ import CardProperty from '@/components/CardProperty'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { FreeMode } from 'swiper/modules'
 import usePropertiesStore from '@/stores/propertiesStore'
+import 'swiper/css'
+import 'swiper/css/free-mode'
 
 
 function ListFeatured() {

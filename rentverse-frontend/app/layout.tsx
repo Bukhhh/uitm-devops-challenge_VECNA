@@ -2,9 +2,9 @@ import React from 'react'
 import type { Metadata } from 'next'
 import { Poly, Manrope } from 'next/font/google'
 import './globals.css'
-import 'swiper/css'
-import 'swiper/css/free-mode'
-import 'swiper/css/scrollbar'
+
+
+
 import '@maptiler/sdk/dist/maptiler-sdk.css'
 import clsx from 'clsx'
 import AuthInitializer from '@/components/AuthInitializer'

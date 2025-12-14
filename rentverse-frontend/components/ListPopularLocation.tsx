@@ -4,6 +4,8 @@ import CardPopularLocation from '@/components/CardPopularLocation'
 import { getPopularLocations } from '@/data/popular-locations'
 import { FreeMode } from 'swiper/modules'
 import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
+import 'swiper/css/free-mode'
 
 function ListPopularLocation() {
   const locations = getPopularLocations()
