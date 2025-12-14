@@ -1,1 +1,1 @@
-{"framework": "nextjs", "buildCommand": "NODE_OPTIONS='--no-experimental-fetch' next build", "outputDirectory": ".next", "devCommand": "next dev", "installCommand": "npm install", "env": {"NEXT_DISABLE_TURBOPACK": "1", "TURBOPACK": "0", "NODE_OPTIONS": "--no-experimental-fetch"}}
+{"framework": "nextjs", "buildCommand": "next build", "outputDirectory": ".next", "devCommand": "next dev", "installCommand": "npm install"}
