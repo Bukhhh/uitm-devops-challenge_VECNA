@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
     --background: #ffffff;
@@ -44,53 +46,34 @@
     --slate-950: #020618;
 }
 
-@theme {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-serif: Poly, serif;
-    --font-sans: Manrope, sans-serif;
-
-    /* Custom teal color scheme */
-    --color-teal-50: var(--teal-50);
-    --color-teal-100: var(--teal-100);
-    --color-teal-200: var(--teal-200);
-    --color-teal-300: var(--teal-300);
-    --color-teal-400: var(--teal-400);
-    --color-teal-500: var(--teal-500);
-    --color-teal-600: var(--teal-600);
-    --color-teal-700: var(--teal-700);
-    --color-teal-800: var(--teal-800);
-    --color-teal-900: var(--teal-900);
-    --color-teal-950: var(--teal-950);
-
-    /* Custom orange color scheme */
-    --color-orange-50: var(--orange-50);
-    --color-orange-100: var(--orange-100);
-    --color-orange-200: var(--orange-200);
-    --color-orange-300: var(--orange-300);
-    --color-orange-400: var(--orange-400);
-    --color-orange-500: var(--orange-500);
-    --color-orange-600: var(--orange-600);
-    --color-orange-700: var(--orange-700);
-    --color-orange-800: var(--orange-800);
-    --color-orange-900: var(--orange-900);
-    --color-orange-950: var(--orange-950);
-
-    /* Custom slate color scheme */
-    --color-slate-50: var(--slate-50);
-    --color-slate-100: var(--slate-100);
-    --color-slate-200: var(--slate-200);
-    --color-slate-300: var(--slate-300);
-    --color-slate-400: var(--slate-400);
-    --color-slate-500: var(--slate-500);
-    --color-slate-600: var(--slate-600);
-    --color-slate-700: var(--slate-700);
-    --color-slate-800: var(--slate-800);
-    --color-slate-900: var(--slate-900);
-    --color-slate-950: var(--slate-950);
-}
-
 body {
     background: var(--background);
     color: var(--foreground);
+}
+
+/* Custom utility classes for teal colors */
+@layer utilities {
+    .text-teal-50 { color: var(--teal-50); }
+    .text-teal-100 { color: var(--teal-100); }
+    .text-teal-200 { color: var(--teal-200); }
+    .text-teal-300 { color: var(--teal-300); }
+    .text-teal-400 { color: var(--teal-400); }
+    .text-teal-500 { color: var(--teal-500); }
+    .text-teal-600 { color: var(--teal-600); }
+    .text-teal-700 { color: var(--teal-700); }
+    .text-teal-800 { color: var(--teal-800); }
+    .text-teal-900 { color: var(--teal-900); }
+    .text-teal-950 { color: var(--teal-950); }
+
+    .bg-teal-50 { background-color: var(--teal-50); }
+    .bg-teal-100 { background-color: var(--teal-100); }
+    .bg-teal-200 { background-color: var(--teal-200); }
+    .bg-teal-300 { background-color: var(--teal-300); }
+    .bg-teal-400 { background-color: var(--teal-400); }
+    .bg-teal-500 { background-color: var(--teal-500); }
+    .bg-teal-600 { background-color: var(--teal-600); }
+    .bg-teal-700 { background-color: var(--teal-700); }
+    .bg-teal-800 { background-color: var(--teal-800); }
+    .bg-teal-900 { background-color: var(--teal-900); }
+    .bg-teal-950 { background-color: var(--teal-950); }
 }
