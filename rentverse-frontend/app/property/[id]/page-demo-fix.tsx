@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
+import { useParams } from 'next/navigation'
 import ContentWrapper from '@/components/ContentWrapper'
 import BarProperty from '@/components/BarProperty'
 import ImageGallery from '@/components/ImageGallery'
@@ -56,8 +56,8 @@ const DEMO_PROPERTY = {
 }
 
 function DetailPage() {
-  const router = useRouter()
-  const propertyId = router.query.id as string
+  const params = useParams()
+  const propertyId = params.id as string
 
   // Always show demo property for immediate fix
   const property = DEMO_PROPERTY

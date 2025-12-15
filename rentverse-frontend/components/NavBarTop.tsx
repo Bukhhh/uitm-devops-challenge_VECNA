@@ -36,7 +36,24 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
   }, [])
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const router = useRouter()
+  
+  // Defensive router initialization
+  const [routerReady, setRouterReady] = useState(false)
+  
+  // Only use router when it's actually available
+  useEffect(() => {
+    try {
+      // Check if we're in a browser environment and router context is available
+      if (typeof window !== 'undefined') {
+        const routerInstance = useRouter()
+        setRouterReady(true)
+      }
+    } catch (error) {
+      console.warn('Router not available during component mount:', error)
+      setRouterReady(false)
+    }
+  }, [])
+
   const { clearTemporaryData, isDirty } = usePropertyListingStore()
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen)
@@ -46,10 +63,30 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
     if (isDirty) {
       if (window.confirm('Exit? Unsaved changes will be lost.')) {
         clearTemporaryData()
-        router.push('/')
+        // Safe navigation with fallback
+        if (routerReady) {
+          try {
+            const router = useRouter()
+            router.push('/')
+          } catch (error) {
+            window.location.href = '/'
+          }
+        } else {
+          window.location.href = '/'
+        }
       }
     } else {
-      router.push('/')
+      // Safe navigation with fallback
+      if (routerReady) {
+        try {
+          const router = useRouter()
+          router.push('/')
+        } catch (error) {
+          window.location.href = '/'
+        }
+      } else {
+        window.location.href = '/'
+      }
     }
   }
 

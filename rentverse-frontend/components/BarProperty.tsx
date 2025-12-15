@@ -25,7 +25,21 @@ function BarProperty(props: Readonly<BarPropertyProps>) {
   const [isToggling, setIsToggling] = useState(false)
 
   const handleBackButton = () => {
-    router.back()
+    try {
+      if (typeof window !== 'undefined' && router) {
+        router.back()
+      } else {
+        // Fallback: navigate to property listing
+        if (typeof window !== 'undefined') {
+          window.location.href = '/property'
+        }
+      }
+    } catch (error) {
+      console.warn('Router not available, using fallback navigation')
+      if (typeof window !== 'undefined') {
+        window.location.href = '/property'
+      }
+    }
   }
 
   const handleFavoriteToggle = async () => {

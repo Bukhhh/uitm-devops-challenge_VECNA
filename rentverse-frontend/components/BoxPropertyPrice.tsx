@@ -5,6 +5,7 @@ import ButtonFilled from '@/components/ButtonFilled'
 import { getLocaledPrice } from '@/utils/property'
 import useBookingStore from '@/stores/bookingStore'
 import useAuthStore from '@/stores/authStore'
+import { useState, useEffect } from 'react'
 
 interface BoxPropertyPriceProps {
   readonly price: number
@@ -13,10 +14,23 @@ interface BoxPropertyPriceProps {
 }
 
 function BoxPropertyPrice(props: BoxPropertyPriceProps) {
-  const router = useRouter()
+  // Defensive router initialization
+  const [routerReady, setRouterReady] = useState(false)
   const { setPropertyId } = useBookingStore()
   const { user, isLoggedIn } = useAuthStore()
   const formattedPrice = getLocaledPrice(props.price)
+
+  // Initialize router safely
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        setRouterReady(true)
+      }
+    } catch (error) {
+      console.warn('Router not available during component mount:', error)
+      setRouterReady(false)
+    }
+  }, [])
 
   // Check if current user is the property owner
   const isOwner = isLoggedIn && user && props.ownerId && user.id === props.ownerId
@@ -33,13 +47,31 @@ function BoxPropertyPrice(props: BoxPropertyPriceProps) {
     // Set the property ID in the booking store
     setPropertyId(props.propertyId)
     
-    // Navigate to the booking page
-    router.push(`/property/${props.propertyId}/book`)
+    // Safe navigation with fallback
+    if (routerReady) {
+      try {
+        const router = useRouter()
+        router.push(`/property/${props.propertyId}/book`)
+      } catch (error) {
+        window.location.href = `/property/${props.propertyId}/book`
+      }
+    } else {
+      window.location.href = `/property/${props.propertyId}/book`
+    }
   }
 
   const handleEditClick = () => {
-    // Navigate to the property edit page
-    router.push(`/property/${props.propertyId}/modify`)
+    // Safe navigation with fallback
+    if (routerReady) {
+      try {
+        const router = useRouter()
+        router.push(`/property/${props.propertyId}/modify`)
+      } catch (error) {
+        window.location.href = `/property/${props.propertyId}/modify`
+      }
+    } else {
+      window.location.href = `/property/${props.propertyId}/modify`
+    }
   }
 
   return (
@@ -75,7 +107,7 @@ function BoxPropertyPrice(props: BoxPropertyPriceProps) {
         {isOwner ? (
           <span className="text-sm text-slate-500">Manage your property listing</span>
         ) : (
-          <span className="text-sm text-slate-500">You won&apos;t be charged yet</span>
+          <span className="text-sm text-slate-500">You won't be charged yet</span>
         )}
       </div>
     </div>

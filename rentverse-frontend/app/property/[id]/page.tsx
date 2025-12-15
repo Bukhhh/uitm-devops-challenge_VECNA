@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/router'
+import { useParams } from 'next/navigation'
 import { 
   MapPin, 
   Home, 
@@ -122,8 +122,8 @@ const MapViewer = ({ center, zoom, markers }: any) => (
 )
 
 function DetailPage() {
-  const router = useRouter()
-  const propertyId = router.query.id as string
+  const params = useParams()
+  const propertyId = params.id as string
 
   // Always show demo property for immediate fix
   const property = DEMO_PROPERTY
