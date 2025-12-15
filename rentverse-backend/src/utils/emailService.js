@@ -1,13 +1,36 @@
 const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-// Initialize Resend with API key
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend (will be null if no API key)
+const resendApiKey = process.env.RESEND_API_KEY;
+let resend = null;
+
+// Only initialize Resend if API key is available
+if (resendApiKey && resendApiKey !== 'your_resend_api_key_here') {
+  try {
+    resend = new Resend(resendApiKey);
+    console.log('✅ Resend email service initialized');
+  } catch (error) {
+    console.warn('⚠️ Failed to initialize Resend:', error.message);
+  }
+} else {
+  console.log('⚠️ Using Gmail SMTP fallback for testing');
+}
+
+// Initialize Gmail SMTP transporter as fallback
+const gmailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'mohdbukhari03@gmail.com',
+    pass: process.env.EMAIL_PASS || 'qsdnacxvzwnlzbxt'
+  }
+});
 
 /**
- * Send OTP email using Resend
+ * Send OTP email using available email service
  * @param {string} email - Recipient email address
  * @param {string} otp - One-time password
- * @returns {Promise<Object>} Resend API response
+ * @returns {Promise<Object>} Email service response
  */
 const sendOTPEmail = async (email, otp) => {
   try {
@@ -106,6 +129,16 @@ const sendOTPEmail = async (email, otp) => {
             color: #2563eb;
             font-weight: 600;
         }
+        .test-badge {
+            background: #f59e0b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
         @media (max-width: 480px) {
             .container {
                 padding: 30px 20px;
@@ -119,6 +152,7 @@ const sendOTPEmail = async (email, otp) => {
 </head>
 <body>
     <div class="container">
+        ${!resend ? '<div class="test-badge">🔧 TEST MODE</div>' : ''}
         <div class="logo">🏠 Rentverse</div>
         <div class="subtitle">Your Secure Property Platform</div>
         
@@ -143,6 +177,9 @@ const sendOTPEmail = async (email, otp) => {
                 <strong>Rentverse</strong> - Secure Property Management Platform
             </p>
             <p class="footer-text">
+                ${!resend ? '📧 Sent via Gmail SMTP (Test Mode)' : '📧 Sent via Resend API'}
+            </p>
+            <p class="footer-text">
                 If you didn't request this code, please ignore this email.
             </p>
             <p class="footer-text">
@@ -154,23 +191,53 @@ const sendOTPEmail = async (email, otp) => {
 </html>
     `;
 
-    const response = await resend.emails.send({
-      from: 'Rentverse Security <security@rentverse-vecna-secure.xyz>',
-      to: email,
-      subject: 'Your Security Code - Rentverse',
-      html: emailHtml
-    });
+    let response;
+    let emailService;
+
+    // Try Resend first if available, otherwise use Gmail SMTP
+    if (resend) {
+      try {
+        response = await resend.emails.send({
+          from: 'Rentverse Security <security@rentverse-vecna-secure.xyz>',
+          to: email,
+          subject: 'Your Security Code - Rentverse',
+          html: emailHtml
+        });
+        emailService = 'Resend API';
+      } catch (resendError) {
+        console.warn('⚠️ Resend failed, falling back to Gmail SMTP:', resendError.message);
+        // Fall back to Gmail SMTP
+        response = await gmailTransporter.sendMail({
+          from: 'Rentverse Security <mohdbukhari03@gmail.com>',
+          to: email,
+          subject: 'Your Security Code - Rentverse',
+          html: emailHtml
+        });
+        emailService = 'Gmail SMTP (Resend Fallback)';
+      }
+    } else {
+      // Use Gmail SMTP as primary
+      response = await gmailTransporter.sendMail({
+        from: 'Rentverse Security <mohdbukhari03@gmail.com>',
+        to: email,
+        subject: 'Your Security Code - Rentverse',
+        html: emailHtml
+      });
+      emailService = 'Gmail SMTP';
+    }
 
     console.log('✅ OTP Email sent successfully:', {
       email,
-      messageId: response.id,
+      service: emailService,
+      messageId: response.id || 'gmail_success',
       timestamp: new Date().toISOString()
     });
 
     return {
       success: true,
-      messageId: response.id,
-      email
+      messageId: response.id || 'gmail_success',
+      email,
+      service: emailService
     };
 
   } catch (error) {
@@ -186,5 +253,6 @@ const sendOTPEmail = async (email, otp) => {
 
 module.exports = {
   sendOTPEmail,
-  resend
+  resend: resend || null,
+  gmailTransporter
 };
