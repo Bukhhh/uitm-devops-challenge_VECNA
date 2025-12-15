@@ -1,3 +1,5 @@
+'use client'
+
 import SearchBoxProperty from '@/components/SearchBoxProperty'
 import ContentWrapper from '@/components/ContentWrapper'
 import CardProperty from '@/components/CardProperty'
