@@ -7,7 +7,7 @@ import clsx from 'clsx'
 import useAuthStore from '@/stores/authStore'
 import useCurrentUser from '@/hooks/useCurrentUser'
 import Avatar from '@/components/Avatar'
-import UserDropdown from '@/components/UserDropdown'
+import MobileMenu from '@/components/MobileMenu'
 
 type NavItem = 'explore' | 'wishlists' | 'login'
 
@@ -128,7 +128,7 @@ function NavBarBottom() {
               </span>
             </Link>
           )}
-          {isDropdownOpen && <UserDropdown isOpen={isDropdownOpen} onClose={closeDropdown} position="bottom" />}
+          {isDropdownOpen && <MobileMenu isOpen={isDropdownOpen} onClose={closeDropdown} />}
         </li>
       </ul>
     </nav>
