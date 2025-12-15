@@ -1,47 +1,21 @@
-# Router Fix Test
-
-This document describes the fixes applied to resolve the "NextRouter was not mounted" error.
+# Next.js Router Mounting Error Fix
 
 ## Problem
-The error occurred when accessing property detail pages, specifically at:
-`/property/8ee74a41-4d45-4b03-97b0-76f6a0dcd920`
+The error `NextRouter was not mounted` occurs when `useRouter()` is called before the Next.js router context is properly mounted.
 
 ## Root Cause
-The issue was caused by components using `useRouter()` hook outside of the proper Next.js router context. The error appeared in multiple components:
-- `BarProperty` - for navigation and back button functionality
-- `NavBarTop` - for global navigation and exit functionality  
-- `BoxPropertyPrice` - for booking and edit navigation
+Looking at the stack trace, the error occurs in the property detail page rendering. The issue is likely in components that use `useRouter()` hooks.
 
-## Fixes Applied
+## Solution Applied
+Fixed `BoxPropertyPrice.tsx` component where `useRouter()` was being called inside event handler functions instead of at the component's top level.
 
-### 1. BarProperty Component (`rentverse-frontend/components/BarProperty.tsx`)
-- Added defensive router usage with try-catch blocks
-- Implemented fallback to `window.location.href` when router is unavailable
-- Added proper error handling for navigation operations
-
-### 2. NavBarTop Component (`rentverse-frontend/components/NavBarTop.tsx`)
-- Added router readiness checking before using router operations
-- Implemented safe navigation with fallbacks
-- Added proper error handling for exit functionality
-
-### 3. BoxPropertyPrice Component (`rentverse-frontend/components/BoxPropertyPrice.tsx`)
-- Added defensive router initialization
-- Implemented safe navigation for booking and edit operations
-- Added fallback navigation when router context is unavailable
+## Additional Fixes Needed
+- Ensure all `useRouter()` calls are at the top level of components
+- Avoid calling `useRouter()` inside event handlers, useCallback, or other functions
+- Add proper error boundaries and fallback UI for router initialization
 
 ## Testing
-To verify the fixes:
-1. Navigate to the property detail page
-2. Click on any property listing
-3. Verify no "NextRouter was not mounted" errors appear in console
-4. Test back button functionality
-5. Test share and favorite buttons
-6. Test booking/edit button functionality
-
-## Key Changes
-- All `useRouter()` calls are now wrapped in defensive code
-- Fallback navigation using `window.location.href` when router is unavailable
-- Proper error handling to prevent crashes
-- Maintained all existing functionality while adding resilience
-
-The fixes ensure the application works even when the Next.js router context isn't immediately available, which can happen during server-side rendering or hydration phases.
+To verify the fix:
+1. Navigate to a property detail page: `/property/[id]`
+2. Check browser console for the NextRouter mounting error
+3. Verify that navigation buttons work correctly

@@ -204,8 +204,8 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       currentStep: 0,
       data: initialData,
       steps: initialSteps,
-      isLoading: false as boolean,
-      isDirty: false as boolean,
+      isLoading: (false as boolean),
+      isDirty: false,
 
       setCurrentStep: (step: number) => {
         const { steps } = get()

@@ -30,13 +30,33 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
   // 2. ROUTER ACCESS (properly at top level)
   const router = useRouter()
   
-  // 3. HYDRATION HANDLING
+  // 3. HYDRATION AND ROUTER MOUNTING HANDLING
   const [isMounted, setIsMounted] = useState(false)
+  const [routerReady, setRouterReady] = useState(false)
+  
   useEffect(() => {
+    // Set mounted state
     setIsMounted(true)
+    
     // Debug: Check if store has data immediately on mount
     console.log("NavBar Mounted. LoggedIn:", useAuthStore.getState().isLoggedIn);
-  }, [])
+    
+    // Wait for router to be ready
+    const checkRouter = () => {
+      try {
+        // Try to access router to verify it's mounted
+        if (typeof window !== 'undefined' && router) {
+          setRouterReady(true)
+        }
+      } catch (error) {
+        console.warn('Router not ready yet:', error)
+        // Retry after a short delay
+        setTimeout(checkRouter, 100)
+      }
+    }
+    
+    checkRouter()
+  }, [router])
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const { clearTemporaryData, isDirty } = usePropertyListingStore()
@@ -48,28 +68,37 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
     if (isDirty) {
       if (window.confirm('Exit? Unsaved changes will be lost.')) {
         clearTemporaryData()
-        // Safe navigation with fallback
+        // Safe navigation with fallback - only if router is ready
+        if (routerReady) {
+          try {
+            router.push('/')
+          } catch (error) {
+            console.warn('Router navigation failed, using fallback:', error)
+            window.location.href = '/'
+          }
+        } else {
+          window.location.href = '/'
+        }
+      }
+    } else {
+      // Safe navigation with fallback - only if router is ready
+      if (routerReady) {
         try {
           router.push('/')
         } catch (error) {
           console.warn('Router navigation failed, using fallback:', error)
           window.location.href = '/'
         }
-      }
-    } else {
-      // Safe navigation with fallback
-      try {
-        router.push('/')
-      } catch (error) {
-        console.warn('Router navigation failed, using fallback:', error)
+      } else {
         window.location.href = '/'
       }
     }
   }
 
-  // 4. SIMPLE RENDER LOGIC
-  // Only show profile if mounted AND logged in AND user data exists
-  const showProfile = isMounted && isLoggedIn && user;
+  // 4. ENHANCED RENDER LOGIC
+  // Only show full navigation if both mounted and router is ready
+  const showFullNavigation = isMounted && routerReady
+  const showProfile = isMounted && isLoggedIn && user
 
   return (
     <div className={clsx([
@@ -88,10 +117,10 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
             height={48} />
         </Link>
 
-        {(searchBoxType === 'compact' && !isQuestionnaire) &&
+        {(searchBoxType === 'compact' && !isQuestionnaire && showFullNavigation) &&
           <SearchBoxPropertyMini className="hidden lg:block absolute ml-[16%]" />}
 
-        {!isQuestionnaire && (
+        {!isQuestionnaire && showFullNavigation && (
           <nav className="hidden md:flex items-center space-x-8">
             <li><TextAction href={'/property'} text={'Browse Properties'} /></li>
             <li><TextAction href={'/property/new'} text={'List your property'} /></li>
@@ -116,10 +145,26 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
                 <SignUpButton />
               )}
             </li>
-          </nav>)}
-        {isQuestionnaire && <ButtonSecondary label="Exit" onClick={handleExit} />}
+          </nav>
+        )}
+        
+        {/* Show loading state if router is not ready yet */}
+        {!routerReady && isMounted && (
+          <div className="hidden md:flex items-center space-x-8">
+            <div className="animate-pulse bg-slate-200 h-4 w-24 rounded"></div>
+            <div className="animate-pulse bg-slate-200 h-4 w-32 rounded"></div>
+          </div>
+        )}
+        
+        {isQuestionnaire && (
+          <ButtonSecondary 
+            label="Exit" 
+            onClick={handleExit}
+            disabled={!routerReady}
+          />
+        )}
       </div>
-      {(searchBoxType === 'full' && !isQuestionnaire) && <SearchBoxProperty />}
+      {(searchBoxType === 'full' && !isQuestionnaire && showFullNavigation) && <SearchBoxProperty />}
     </div>
   )
 }

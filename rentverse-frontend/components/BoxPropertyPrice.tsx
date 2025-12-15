@@ -5,7 +5,6 @@ import ButtonFilled from '@/components/ButtonFilled'
 import { getLocaledPrice } from '@/utils/property'
 import useBookingStore from '@/stores/bookingStore'
 import useAuthStore from '@/stores/authStore'
-import { useState, useEffect } from 'react'
 
 interface BoxPropertyPriceProps {
   readonly price: number
@@ -14,23 +13,11 @@ interface BoxPropertyPriceProps {
 }
 
 function BoxPropertyPrice(props: BoxPropertyPriceProps) {
-  // Defensive router initialization
-  const [routerReady, setRouterReady] = useState(false)
+  // Initialize router at component top level (correct usage)
+  const router = useRouter()
   const { setPropertyId } = useBookingStore()
   const { user, isLoggedIn } = useAuthStore()
   const formattedPrice = getLocaledPrice(props.price)
-
-  // Initialize router safely
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        setRouterReady(true)
-      }
-    } catch (error) {
-      console.warn('Router not available during component mount:', error)
-      setRouterReady(false)
-    }
-  }, [])
 
   // Check if current user is the property owner
   const isOwner = isLoggedIn && user && props.ownerId && user.id === props.ownerId
@@ -47,31 +34,13 @@ function BoxPropertyPrice(props: BoxPropertyPriceProps) {
     // Set the property ID in the booking store
     setPropertyId(props.propertyId)
     
-    // Safe navigation with fallback
-    if (routerReady) {
-      try {
-        const router = useRouter()
-        router.push(`/property/${props.propertyId}/book`)
-      } catch (error) {
-        window.location.href = `/property/${props.propertyId}/book`
-      }
-    } else {
-      window.location.href = `/property/${props.propertyId}/book`
-    }
+    // Navigate to booking page
+    router.push(`/property/${props.propertyId}/book`)
   }
 
   const handleEditClick = () => {
-    // Safe navigation with fallback
-    if (routerReady) {
-      try {
-        const router = useRouter()
-        router.push(`/property/${props.propertyId}/modify`)
-      } catch (error) {
-        window.location.href = `/property/${props.propertyId}/modify`
-      }
-    } else {
-      window.location.href = `/property/${props.propertyId}/modify`
-    }
+    // Navigate to property modification page
+    router.push(`/property/${props.propertyId}/modify`)
   }
 
   return (
