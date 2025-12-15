@@ -27,7 +27,10 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
   const user = useAuthStore((state) => state.user)
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
   
-  // 2. HYDRATION HANDLING
+  // 2. ROUTER ACCESS (properly at top level)
+  const router = useRouter()
+  
+  // 3. HYDRATION HANDLING
   const [isMounted, setIsMounted] = useState(false)
   useEffect(() => {
     setIsMounted(true)
@@ -36,24 +39,6 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
   }, [])
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  
-  // Defensive router initialization
-  const [routerReady, setRouterReady] = useState(false)
-  
-  // Only use router when it's actually available
-  useEffect(() => {
-    try {
-      // Check if we're in a browser environment and router context is available
-      if (typeof window !== 'undefined') {
-        const routerInstance = useRouter()
-        setRouterReady(true)
-      }
-    } catch (error) {
-      console.warn('Router not available during component mount:', error)
-      setRouterReady(false)
-    }
-  }, [])
-
   const { clearTemporaryData, isDirty } = usePropertyListingStore()
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen)
@@ -64,33 +49,25 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
       if (window.confirm('Exit? Unsaved changes will be lost.')) {
         clearTemporaryData()
         // Safe navigation with fallback
-        if (routerReady) {
-          try {
-            const router = useRouter()
-            router.push('/')
-          } catch (error) {
-            window.location.href = '/'
-          }
-        } else {
+        try {
+          router.push('/')
+        } catch (error) {
+          console.warn('Router navigation failed, using fallback:', error)
           window.location.href = '/'
         }
       }
     } else {
       // Safe navigation with fallback
-      if (routerReady) {
-        try {
-          const router = useRouter()
-          router.push('/')
-        } catch (error) {
-          window.location.href = '/'
-        }
-      } else {
+      try {
+        router.push('/')
+      } catch (error) {
+        console.warn('Router navigation failed, using fallback:', error)
         window.location.href = '/'
       }
     }
   }
 
-  // 3. SIMPLE RENDER LOGIC
+  // 4. SIMPLE RENDER LOGIC
   // Only show profile if mounted AND logged in AND user data exists
   const showProfile = isMounted && isLoggedIn && user;
 
@@ -116,6 +93,7 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
 
         {!isQuestionnaire && (
           <nav className="hidden md:flex items-center space-x-8">
+            <li><TextAction href={'/property'} text={'Browse Properties'} /></li>
             <li><TextAction href={'/property/new'} text={'List your property'} /></li>
             <li><LanguageSelector /></li>
             <li className="relative">
