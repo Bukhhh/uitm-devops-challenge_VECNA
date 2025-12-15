@@ -137,7 +137,7 @@ function DetailPage() {
                   <Home className="w-6 h-6 text-teal-600" />
                 </div>
                 <div className="text-lg font-semibold text-slate-900">{property.furnished ? 'Yes' : 'No'}</div>
-                <div className="text-xs text-xs text-slate-500">Furnished</div>
+                <div className="text-xs text-slate-500">Furnished</div>
               </div>
             </div>
 
