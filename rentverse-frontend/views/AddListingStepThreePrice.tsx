@@ -114,59 +114,59 @@ function AddListingStepThreePrice() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-8">
-      <div className="space-y-12">
+    <div className="max-w-2xl mx-auto p-4 sm:p-8">
+      <div className="space-y-8 sm:space-y-12">
         <div className="space-y-3 text-center">
-          <h2 className="text-3xl font-serif text-slate-900">
+          <h2 className="text-2xl sm:text-3xl font-serif text-slate-900">
             Now, set a rent price
           </h2>
-          <p className="text-lg text-slate-500">
+          <p className="text-base sm:text-lg text-slate-500">
             You can edit the price later
           </p>
         </div>
 
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3">
             {isEditing ? (
               <div className="flex items-center">
-                <span className="text-6xl font-serif text-slate-900">RM</span>
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-serif text-slate-900">RM</span>
                 <input
                   type="number"
                   value={price}
                   onChange={handlePriceChange}
                   onBlur={handlePriceBlur}
                   onKeyPress={handleKeyPress}
-                  className="text-6xl font-serif text-slate-900 bg-transparent border-none outline-none text-center w-48"
+                  className="text-2xl sm:text-3xl lg:text-4xl font-serif text-slate-900 bg-transparent border-none outline-none text-center w-24 sm:w-32 lg:w-40"
                   autoFocus
                 />
               </div>
             ) : (
               <div
-                className="flex items-center cursor-pointer hover:bg-slate-50 rounded-lg px-4 py-2 transition-colors"
+                className="flex items-center cursor-pointer hover:bg-slate-50 rounded-lg px-3 sm:px-4 py-2 transition-colors"
                 onClick={handlePriceClick}
               >
-                <span className="text-6xl font-serif text-slate-900">
+                <span className="text-2xl sm:text-3xl lg:text-4xl font-serif text-slate-900">
                   RM {price.toLocaleString()}
                 </span>
               </div>
             )}
           </div>
           
-          <p className="text-base text-slate-400">
+          <p className="text-sm sm:text-base text-slate-400">
             Click to edit the price
           </p>
         </div>
 
         <div className="flex justify-center">
           <button 
-            className="flex items-center space-x-3 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-full transition-colors duration-200"
+            className="flex items-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-full transition-colors duration-200 text-sm sm:text-base"
             onClick={handleGetRecommendation}
             disabled={isLoadingRecommendation}
           >
             <span className="font-medium">
               {isLoadingRecommendation ? 'Getting recommendation...' : 'Get recommendation price'}
             </span>
-            <div className="px-3 py-1 bg-white text-teal-600 rounded-full text-sm font-bold">
+            <div className="px-2 sm:px-3 py-1 bg-white text-teal-600 rounded-full text-xs sm:text-sm font-bold">
               RevAI
             </div>
           </button>
