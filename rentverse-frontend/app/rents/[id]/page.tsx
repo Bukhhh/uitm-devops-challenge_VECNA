@@ -392,7 +392,7 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
       <BarProperty title={`${booking.property.title} - ${invoiceNumber}`} />
 
       <section className="space-y-6">
-        <ImageGallery images={booking.property.images as [string, string, string, string, string]} />
+        <ImageGallery images={booking.property.images || []} />
 
         {/* Main content area */}
         <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-8">

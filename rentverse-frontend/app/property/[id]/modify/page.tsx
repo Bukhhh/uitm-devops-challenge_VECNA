@@ -1,44 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
+import { useParams, useRouter } from 'next/navigation'
 import ContentWrapper from '@/components/ContentWrapper'
 import ButtonCircle from '@/components/ButtonCircle'
 import { ArrowLeft, Save, Trash2, Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { usePropertyTypes } from '@/hooks/usePropertyTypes'
 import useAuthStore from '@/stores/authStore'
 import { createApiUrl } from '@/utils/apiConfig'
-
-interface Property {
-  id: string
-  title: string
-  description: string
-  price: string
-  furnished: boolean
-  isAvailable: boolean
-  status: string
-  ownerId: string
-  propertyType: {
-    id: string
-    code: string
-    name: string
-  }
-  owner?: {
-    id: string
-    name: string
-    email: string
-  }
-  images: string[]
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  currencyCode: string
-  bedrooms: number
-  bathrooms: number
-  areaSqm: number
-}
+import { PropertiesApiClient } from '@/utils/propertiesApiClient'
+import type { Property } from '@/types/property'
 
 interface PropertyResponse {
   success: boolean
@@ -49,9 +20,9 @@ interface PropertyResponse {
 }
 
 function ModifyPropertyPage() {
+  const params = useParams()
   const router = useRouter()
-
-  const propertyId = router.query.id as string
+  const propertyId = params.id as string
   const { propertyTypes, isLoading: isLoadingTypes } = usePropertyTypes()
   const { isLoggedIn, user } = useAuthStore()
 
@@ -130,61 +101,37 @@ function ModifyPropertyPage() {
 
       try {
         console.log('[PROPERTY] Fetching property with ID:', propertyId)
-        const token = localStorage.getItem('authToken')
-        if (!token) {
-          setError('Authentication token not found')
-          setIsLoading(false)
+
+        const propertyData = await PropertiesApiClient.getProperty(propertyId)
+        console.log('[PROPERTY] Successfully loaded property:', propertyData)
+        
+        // Check if the current user is the owner of this property
+        if (user && propertyData.ownerId !== user.id) {
+          console.log('[AUTH] User is not the owner of this property:', {
+            currentUserId: user.id,
+            propertyOwnerId: propertyData.ownerId
+          })
+          setIsUnauthorized(true)
+          setError('You are not authorized to modify this property. Only the property owner can make changes.')
           return
         }
-
-        const response = await fetch(createApiUrl(`properties/${propertyId}`), {
-          method: 'GET',
-          headers: {
-            'accept': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch property: ${response.status}`)
-        }
-
-        const data: PropertyResponse = await response.json()
         
-        if (data.success && data.data.property) {
-          const propertyData = data.data.property
-          console.log('[PROPERTY] Successfully loaded property:', propertyData)
-          
-          // Check if the current user is the owner of this property
-          if (user && propertyData.ownerId !== user.id) {
-            console.log('[AUTH] User is not the owner of this property:', {
-              currentUserId: user.id,
-              propertyOwnerId: propertyData.ownerId
-            })
-            setIsUnauthorized(true)
-            setError('You are not authorized to modify this property. Only the property owner can make changes.')
-            return
-          }
-          
-          setProperty(propertyData)
-          
-          // Pre-fill form data with fetched property data - ensure all fields are properly set
-          const newFormData = {
-            title: propertyData.title || '',
-            description: propertyData.description || '',
-            propertyType: propertyData.propertyType?.name || '',
-            price: propertyData.price?.toString() || '',
-            furnished: Boolean(propertyData.furnished),
-            isAvailable: propertyData.isAvailable ?? true,
-            status: propertyData.status || 'APPROVED'
-          }
-          
-          setFormData(newFormData)
-          
-          console.log('[PROPERTY] Form pre-filled with:', newFormData)
-        } else {
-          setError('Failed to load property')
+        setProperty(propertyData)
+        
+        // Pre-fill form data with fetched property data - ensure all fields are properly set
+        const newFormData = {
+          title: propertyData.title || '',
+          description: propertyData.description || '',
+          propertyType: propertyData.propertyType?.name || propertyData.type || '',
+          price: propertyData.price?.toString() || '',
+          furnished: Boolean(propertyData.furnished),
+          isAvailable: propertyData.isAvailable ?? true,
+          status: propertyData.status || 'APPROVED'
         }
+        
+        setFormData(newFormData)
+        
+        console.log('[PROPERTY] Form pre-filled with:', newFormData)
       } catch (err) {
         console.error('Error fetching property:', err)
         setError(err instanceof Error ? err.message : 'Failed to load property')
@@ -224,12 +171,6 @@ function ModifyPropertyPage() {
     setSuccess(null)
 
     try {
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        setError('Authentication token not found')
-        return
-      }
-
       // Only send changed fields
       const updateData: Partial<{
         title: string
@@ -243,7 +184,7 @@ function ModifyPropertyPage() {
       if (property) {
         if (formData.title !== property.title) updateData.title = formData.title
         if (formData.description !== property.description) updateData.description = formData.description
-        if (formData.price !== property.price) updateData.price = parseFloat(formData.price)
+        if (formData.price !== property.price.toString()) updateData.price = parseFloat(formData.price)
         if (formData.furnished !== property.furnished) updateData.furnished = formData.furnished
         if (formData.isAvailable !== property.isAvailable) updateData.isAvailable = formData.isAvailable
         if (formData.status !== property.status) updateData.status = formData.status
@@ -256,31 +197,16 @@ function ModifyPropertyPage() {
         return
       }
 
-      const response = await fetch(createApiUrl(`properties/${propertyId}`), {
-        method: 'PUT',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updateData),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to update property: ${response.status}`)
-      }
-
-      const data: PropertyResponse = await response.json()
+      const updatedProperty = await PropertiesApiClient.updateProperty(propertyId, updateData)
       
-      if (data.success) {
-        setSuccess('Property updated successfully!')
-        // Success - redirect back to property details or list after delay
-        setTimeout(() => {
-          router.push(`/property/${propertyId}`)
-        }, 2000)
-      } else {
-        setError('Failed to update property')
-      }
+      setSuccess('Property updated successfully!')
+      // Update local property state
+      setProperty(updatedProperty)
+      
+      // Success - redirect back to property details after delay
+      setTimeout(() => {
+        router.push(`/property/${propertyId}`)
+      }, 2000)
     } catch (err) {
       console.error('Error updating property:', err)
       setError(err instanceof Error ? err.message : 'Failed to update property')
@@ -309,32 +235,10 @@ function ModifyPropertyPage() {
     setError(null)
 
     try {
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        setError('Authentication token not found')
-        return
-      }
-
-      const response = await fetch(createApiUrl(`properties/${propertyId}`), {
-        method: 'DELETE',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete property: ${response.status}`)
-      }
-
-      const data = await response.json()
+      await PropertiesApiClient.deleteProperty(propertyId)
       
-      if (data.success) {
-        // Success - redirect to property list
-        router.push('/property')
-      } else {
-        setError('Failed to delete property')
-      }
+      // Success - redirect to property list
+      router.push('/property')
     } catch (err) {
       console.error('Error deleting property:', err)
       setError(err instanceof Error ? err.message : 'Failed to delete property')
