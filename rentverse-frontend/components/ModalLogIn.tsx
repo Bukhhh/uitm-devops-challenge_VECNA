@@ -102,7 +102,11 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
         {isLoading ? 'Verifying...' : 'Log in'}
       </ButtonFilled>
 
-      <div className="text-center">
+      <div className="text-center flex items-center justify-center space-x-4">
+        <Link href={'/auth/signup'} className={'underline text-slate-700 text-base hover:text-slate-900 transition-colors'}>
+          Sign up
+        </Link>
+        <span className="text-slate-400">|</span>
         <Link href={'/'} className={'underline text-slate-700 text-base hover:text-slate-900 transition-colors'}>
           Forgot password?
         </Link>
