@@ -69,10 +69,8 @@ function RentsPage() {
       if (!token) return;
 
       try {
-        // FIX: Pastikan guna URL backend yang betul (Port 5000)
-        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
-        
-        const response = await fetch(`${API_BASE}/api/bookings/my-bookings`, {
+        // FIX: Gunakan createApiUrl instead of hardcoded URL
+        const response = await fetch(createApiUrl('bookings/my-bookings'), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -111,34 +109,31 @@ function RentsPage() {
         throw new Error('Authentication token not found')
       }
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:5000';
-      const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/rental-agreement`, {
+      // FIX: Use proper API endpoint for PDF download
+      const response = await fetch(createApiUrl(`bookings/${bookingId}/rental-agreement/download`), {
         method: 'GET',
         headers: {
-          'accept': 'application/json',
+          'accept': 'application/pdf',
           'Authorization': `Bearer ${token}`,
         },
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch rental agreement: ${response.status}`)
+        throw new Error(`Failed to download rental agreement: ${response.status}`)
       }
 
-      const data = await response.json()
+      // For PDF download, the response should be the actual PDF file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `rental-agreement-${bookingId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
       
-      if (data.success && data.data.pdf) {
-        // Create a temporary link element and trigger download
-        const link = document.createElement('a')
-        link.href = data.data.pdf.url
-        link.download = data.data.pdf.fileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        console.log('Rental agreement downloaded successfully')
-      } else {
-        throw new Error('Failed to get rental agreement PDF')
-      }
+      console.log('Rental agreement downloaded successfully')
     } catch (error) {
       console.error('Error downloading rental agreement:', error)
       alert('Failed to download rental agreement. Please try again.')
