@@ -4,6 +4,36 @@ const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const { v4: uuidv4 } = require('uuid');
 
+// Polyfill for ReadableStream in Railway environment
+if (typeof ReadableStream === 'undefined') {
+  try {
+    const { ReadableStream } = require('stream/web');
+    global.ReadableStream = ReadableStream;
+  } catch (error) {
+    console.warn('⚠️ stream/web not available, ReadableStream polyfill failed');
+  }
+}
+
+// Polyfill for WritableStream in Railway environment
+if (typeof WritableStream === 'undefined') {
+  try {
+    const { WritableStream } = require('stream/web');
+    global.WritableStream = WritableStream;
+  } catch (error) {
+    console.warn('⚠️ stream/web not available, WritableStream polyfill failed');
+  }
+}
+
+// Polyfill for TransformStream in Railway environment
+if (typeof TransformStream === 'undefined') {
+  try {
+    const { TransformStream } = require('stream/web');
+    global.TransformStream = TransformStream;
+  } catch (error) {
+    console.warn('⚠️ stream/web not available, TransformStream polyfill failed');
+  }
+}
+
 // 1. Keep existing QR Service (Sibling folder) - Optional import
 let getSignatureQRCode = null;
 try {
@@ -208,10 +238,10 @@ class PDFGenerationService {
       const templateContent = fs.readFileSync(templatePath, 'utf-8');
       const html = ejs.render(templateContent, templateData);
 
-      // Launch Puppeteer with safer options
+      // Launch Puppeteer with Railway-compatible options
       const chromePath = this.getChromePath();
       const launchOptions = { 
-        headless: 'new', 
+        headless: true, 
         args: [
           '--no-sandbox', 
           '--disable-setuid-sandbox',
@@ -220,7 +250,13 @@ class PDFGenerationService {
           '--no-first-run',
           '--no-zygote',
           '--single-process',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-extensions',
+          '--disable-default-apps'
         ] 
       };
       if (chromePath) launchOptions.executablePath = chromePath;
