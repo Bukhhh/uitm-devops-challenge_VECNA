@@ -4,8 +4,14 @@ const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const { v4: uuidv4 } = require('uuid');
 
-// 1. Keep existing QR Service (Sibling folder)
-const { getSignatureQRCode } = require('./eSignature.service');
+// 1. Keep existing QR Service (Sibling folder) - Optional import
+let getSignatureQRCode = null;
+try {
+  ({ getSignatureQRCode } = require('./eSignature.service'));
+} catch (error) {
+  console.log('ℹ️ QR code service not available, proceeding without QR codes');
+  getSignatureQRCode = null;
+}
 
 // 2. Import NEW Hashing Utility (Up one level -> utils)
 const { generateDocumentHash } = require('../utils/digitalSignature');
@@ -165,18 +171,24 @@ class PDFGenerationService {
 
       if (!lease) throw new Error(`Lease with ID ${leaseId} not found`);
 
-      // 2. Generate QR codes
+      // 2. Generate QR codes (Optional - won't fail if not available)
       let landlordQRCode = null;
       let tenantQRCode = null;
 
       try {
-        const staticSignData = { leaseId: lease.id, date: new Date().toISOString() };
-        [landlordQRCode, tenantQRCode] = await Promise.all([
-          getSignatureQRCode({ ...staticSignData, name: lease.landlord.name, role: 'landlord' }),
-          getSignatureQRCode({ ...staticSignData, name: lease.tenant.name, role: 'tenant' }),
-        ]);
+        if (getSignatureQRCode) {
+          const staticSignData = { leaseId: lease.id, date: new Date().toISOString() };
+          [landlordQRCode, tenantQRCode] = await Promise.all([
+            getSignatureQRCode({ ...staticSignData, name: lease.landlord.name, role: 'landlord' }),
+            getSignatureQRCode({ ...staticSignData, name: lease.tenant.name, role: 'tenant' }),
+          ]);
+        } else {
+          console.log('ℹ️ QR code generation service not available, proceeding without QR codes');
+        }
       } catch (qrError) {
         console.warn('⚠️ QR Code generation failed, proceeding without visual codes:', qrError.message);
+        landlordQRCode = null;
+        tenantQRCode = null;
       }
 
       // 3. Prepare template data
@@ -196,25 +208,51 @@ class PDFGenerationService {
       const templateContent = fs.readFileSync(templatePath, 'utf-8');
       const html = ejs.render(templateContent, templateData);
 
-      // Launch Puppeteer
+      // Launch Puppeteer with safer options
       const chromePath = this.getChromePath();
       const launchOptions = { 
         headless: 'new', 
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ] 
       };
       if (chromePath) launchOptions.executablePath = chromePath;
 
-      const browser = await puppeteer.launch(launchOptions);
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+      let browser = null;
+      let pdfBuffer = null;
       
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
-      });
+      try {
+        browser = await puppeteer.launch(launchOptions);
+        const page = await browser.newPage();
+        
+        // Set viewport and content with timeout
+        await page.setViewport({ width: 1200, height: 800 });
+        await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+        
+        // Generate PDF with error handling
+        pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' },
+          preferCSSPageSize: false,
+        });
+        
+      } finally {
+        if (browser) {
+          await browser.close();
+        }
+      }
 
-      await browser.close();
+      if (!pdfBuffer) {
+        throw new Error('Failed to generate PDF buffer');
+      }
 
       // --- 🔒 MODULE 3: DIGITAL SIGNATURE GENERATION ---
       // Hash the PDF buffer
@@ -263,6 +301,7 @@ class PDFGenerationService {
       };
     } catch (error) {
       console.error('❌ Error generating PDF:', error.message);
+      console.error('Stack trace:', error.stack);
       throw new Error(`Failed to generate rental agreement: ${error.message}`);
     }
   }

@@ -6,7 +6,9 @@ async function getSignatureQRCode(userData) {
     const apiUrl = process.env.E_SIGNATURE_API_URL;
 
     if (!apiUrl) {
-      throw new Error('E_SIGNATURE_API_URL not configured');
+      // Return null if no API URL is configured instead of throwing error
+      console.log('ℹ️ E_SIGNATURE_API_URL not configured, skipping QR code generation');
+      return null;
     }
 
     // Send data as required by your endpoint structure
@@ -28,7 +30,8 @@ async function getSignatureQRCode(userData) {
     return response.data.qrCode;
   } catch (error) {
     console.error('E-signature API error:', error.message);
-    throw error;
+    // Return null instead of throwing error to allow PDF generation to continue
+    return null;
   }
 }
 
