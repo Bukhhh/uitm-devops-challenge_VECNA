@@ -65,10 +65,10 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
   // Render: Step 1 - Email & Password
   // ============================================
   const renderLoginStep = () => (
-    <form onSubmit={handlePasswordSubmit} className="space-y-6">
+    <form onSubmit={handlePasswordSubmit} className="space-y-8">
       {/* Email Section */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-slate-900 mb-3">
+        <label htmlFor="email" className="block text-base font-semibold text-slate-900 mb-4">
           Email Address
         </label>
         <InputEmail
@@ -81,7 +81,7 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
 
       {/* Password Section */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-slate-900 mb-3">
+        <label htmlFor="password" className="block text-base font-semibold text-slate-900 mb-4">
           Password
         </label>
         <InputPassword
@@ -97,12 +97,13 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
       <ButtonFilled
         type="submit"
         disabled={!isLoginFormValid() || isLoading}
+        className="w-full py-4 text-lg font-semibold"
       >
         {isLoading ? 'Verifying...' : 'Log in'}
       </ButtonFilled>
 
       <div className="text-center">
-        <Link href={'/'} className={'underline text-slate-700 text-sm hover:text-slate-900 transition-colors'}>
+        <Link href={'/'} className={'underline text-slate-700 text-base hover:text-slate-900 transition-colors'}>
           Forgot password?
         </Link>
       </div>
@@ -113,17 +114,17 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
   // Render: Step 2 - OTP Verification
   // ============================================
   const renderOTPStep = () => (
-    <form onSubmit={handleOTPSubmit} className="space-y-6">
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
+    <form onSubmit={handleOTPSubmit} className="space-y-8">
+      <div className="p-6 bg-blue-50 border-2 border-blue-200 rounded-xl">
+        <p className="text-base text-blue-800 leading-relaxed">
           We've sent a 6-digit code to<br />
-          <span className="font-semibold">{email}</span>
+          <span className="font-semibold text-lg">{email}</span>
         </p>
       </div>
 
       {/* OTP Section */}
       <div>
-        <label htmlFor="otp" className="block text-sm font-medium text-slate-900 mb-3">
+        <label htmlFor="otp" className="block text-base font-semibold text-slate-900 mb-4">
           Verification Code
         </label>
         <input
@@ -139,9 +140,9 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
           maxLength={6}
           inputMode="numeric"
           required
-          className="w-full px-4 py-2 text-lg tracking-widest text-center font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-6 py-4 text-xl tracking-widest text-center font-mono border-2 border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-sm text-slate-500 mt-3">
           Enter the 6-digit code sent to your email
         </p>
       </div>
@@ -150,6 +151,7 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
       <ButtonFilled
         type="submit"
         disabled={otp.length !== 6 || isLoading}
+        className="w-full py-4 text-lg font-semibold"
       >
         {isLoading ? 'Verifying...' : 'Verify Code'}
       </ButtonFilled>
@@ -158,7 +160,7 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
       <button
         type="button"
         onClick={handleBackToEmail}
-        className="w-full text-center text-slate-700 text-sm hover:text-slate-900 transition-colors underline"
+        className="w-full text-center text-slate-700 text-base hover:text-slate-900 transition-colors underline py-2"
       >
         Use a different email
       </button>
@@ -170,36 +172,36 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
   // ============================================
   const containerContent = (
     <div className={clsx([
-      isModal ? 'shadow-xl' : 'border border-slate-400',
-      'bg-white rounded-3xl max-w-md w-full p-8',
+      isModal ? 'shadow-2xl' : 'border-2 border-slate-300',
+      'bg-white rounded-3xl max-w-lg sm:max-w-md w-full mx-auto p-6 sm:p-8',
     ])}>
       {/* Header */}
-      <div className="text-center mb-6 relative">
+      <div className="text-center mb-8 relative">
         {requireOTP && (
           <ArrowLeft
             onClick={handleBackButton}
-            size={20}
+            size={24}
             className="absolute left-0 top-1 text-slate-800 cursor-pointer hover:text-slate-600"
           />
         )}
         {!requireOTP && (
           <ArrowLeft
             onClick={handleBackButton}
-            size={20}
+            size={24}
             className="absolute left-0 top-1 text-slate-800 cursor-pointer hover:text-slate-600"
           />
         )}
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">
+        <h2 className="text-2xl sm:text-xl font-bold text-slate-900 mb-3">
           {requireOTP ? 'Verify Code' : 'Log in'}
         </h2>
-        <div className="w-full h-px bg-slate-200 mt-4"></div>
+        <div className="w-full h-px bg-slate-200 mt-6"></div>
       </div>
 
       {/* Content */}
       <div className="mb-8">
         {/* Alert box - show error if any */}
         {error && (
-          <div className="mb-6">
+          <div className="mb-8">
             <BoxError
               errorTitle={requireOTP ? 'Verification Failed' : "Let's try that again"}
               errorDescription={error}
@@ -222,7 +224,7 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
   }
 
   return (
-    <div className="flex items-center justify-center p-4">
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-50 to-slate-100">
       {containerContent}
     </div>
   )
