@@ -109,34 +109,91 @@ function RentsPage() {
         throw new Error('Authentication token not found')
       }
 
-      // FIX: Use proper API endpoint for PDF download
-      const response = await fetch(createApiUrl(`bookings/${bookingId}/rental-agreement/download`), {
+      // First, try to get the rental agreement info to see if PDF exists
+      console.log('Fetching rental agreement info...')
+      const infoResponse = await fetch(createApiUrl(`bookings/${bookingId}/rental-agreement`), {
         method: 'GET',
         headers: {
-          'accept': 'application/pdf',
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
       })
 
-      if (!response.ok) {
-        throw new Error(`Failed to download rental agreement: ${response.status}`)
+      if (!infoResponse.ok) {
+        throw new Error(`Failed to get rental agreement info: ${infoResponse.status}`)
       }
 
-      // For PDF download, the response should be the actual PDF file
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `rental-agreement-${bookingId}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      const infoData = await infoResponse.json()
       
-      console.log('Rental agreement downloaded successfully')
+      if (infoData.success && infoData.data.pdf) {
+        const pdfUrl = infoData.data.pdf.url
+        const fileName = infoData.data.pdf.fileName || `rental-agreement-${bookingId}.pdf`
+        
+        console.log('PDF URL:', pdfUrl)
+        
+        if (pdfUrl.startsWith('http')) {
+          // It's a Cloudinary URL or external URL - open in new tab
+          console.log('Opening PDF in new tab...')
+          const link = document.createElement('a')
+          link.href = pdfUrl
+          link.target = '_blank'
+          link.rel = 'noopener noreferrer'
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        } else {
+          // It's a local path - try to download via API
+          console.log('Downloading via API...')
+          const downloadResponse = await fetch(createApiUrl(`bookings/${bookingId}/rental-agreement/download`), {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          })
+
+          if (downloadResponse.ok) {
+            // Check content type
+            const contentType = downloadResponse.headers.get('content-type')
+            
+            if (contentType && contentType.includes('application/pdf')) {
+              // Direct PDF response
+              const blob = await downloadResponse.blob()
+              const url = window.URL.createObjectURL(blob)
+              const link = document.createElement('a')
+              link.href = url
+              link.download = fileName
+              document.body.appendChild(link)
+              link.click()
+              document.body.removeChild(link)
+              window.URL.revokeObjectURL(url)
+            } else {
+              // Check if it's a redirect
+              const finalUrl = downloadResponse.url
+              if (finalUrl && finalUrl !== downloadResponse.url) {
+                const link = document.createElement('a')
+                link.href = finalUrl
+                link.target = '_blank'
+                link.download = fileName
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              } else {
+                throw new Error('Unexpected response format')
+              }
+            }
+          } else {
+            throw new Error(`Failed to download: ${downloadResponse.status}`)
+          }
+        }
+        
+        console.log('Rental agreement accessed successfully')
+      } else {
+        throw new Error('Rental agreement not available yet. Please try again later.')
+      }
     } catch (error) {
       console.error('Error downloading rental agreement:', error)
-      alert('Failed to download rental agreement. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Failed to download rental agreement: ${errorMessage}. Please try again.`)
     } finally {
       setDownloadingId(null)
     }
@@ -334,7 +391,7 @@ function RentsPage() {
                           >
                             <Download size={16} />
                             <span>
-                              {downloadingId === booking.id ? 'Downloading...' : 'Download Agreement'}
+                              {downloadingId === booking.id ? 'Accessing...' : 'Download Agreement'}
                             </span>
                           </button>
                           <Link
