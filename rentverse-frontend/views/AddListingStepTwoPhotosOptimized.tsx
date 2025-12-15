@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { X, Plus, Upload, AlertCircle } from 'lucide-react'
+import { X, Plus, Upload, AlertCircle, Camera } from 'lucide-react'
 import { usePropertyListingStore } from '@/stores/propertyListingStore'
 import { uploadImages, validateImageFiles } from '@/utils/uploadService'
 
@@ -19,55 +19,118 @@ interface PhotoFile {
 function AddListingStepTwoPhotosOptimized() {
   const { data, updateData } = usePropertyListingStore()
   const [selectedPhotos, setSelectedPhotos] = useState<PhotoFile[]>([])
-  const [showUploadModal, setShowUploadModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Load existing images from store on mount - only once
+  // Effect to load existing images from the store when the component mounts
   useEffect(() => {
     if (data.images && data.images.length > 0 && selectedPhotos.length === 0) {
-      // Convert stored image URLs to PhotoFile objects for display
       const existingPhotos: PhotoFile[] = data.images.map((url, index) => ({
         id: `existing-${index}`,
-        file: new File([], `image-${index}.jpg`), // Placeholder file
+        file: new File([], `image-${index}.jpg`), 
         preview: url,
         uploaded: true,
         uploadUrl: url,
       }))
       setSelectedPhotos(existingPhotos)
     }
-  }, [data.images]) // Only depend on data.images
-
-  const handleAddPhotos = () => {
-    console.log('Add photos clicked')
-    setShowUploadModal(true)
-  }
+  }, [data.images])
 
   const handleBrowseFiles = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileSelect = (files: FileList | null) => {
+  // Centralized upload logic
+  const handleUpload = useCallback(async (filesToUpload: PhotoFile[]) => {
+    if (filesToUpload.length === 0) return
+
+    setIsUploading(true)
+
+    // Mark files as 'uploading' in the UI
+    setSelectedPhotos(prev =>
+      prev.map(p => {
+        const isFileToUpload = filesToUpload.some(f => f.id === p.id)
+        return isFileToUpload ? { ...p, isUploading: true, error: undefined } : p
+      })
+    )
+
+    try {
+      const result = await uploadImages(
+        filesToUpload.map(p => p.file),
+        {
+          optimize: true,
+          onProgress: progress => {
+            // Update individual photo status based on progress
+            setSelectedPhotos(prev =>
+              prev.map(photo => {
+                const progressItem = progress.find(p => p.file === photo.file)
+                if (progressItem) {
+                  return {
+                    ...photo,
+                    isUploading: progressItem.status === 'uploading',
+                    uploaded: progressItem.status === 'completed',
+                    uploadUrl: progressItem.result?.data.url,
+                    error: progressItem.error,
+                  }
+                }
+                return photo
+              })
+            )
+          },
+        }
+      )
+
+      if (result.success) {
+        // Update the global store with the complete list of uploaded images
+        const newlyUploadedUrls = result.data
+          .filter(uploadResult => uploadResult.success)
+          .map(uploadResult => uploadResult.data.url)
+
+        const existingUrls = selectedPhotos
+          .filter(photo => photo.uploaded && photo.uploadUrl)
+          .map(photo => photo.uploadUrl!)
+        
+        const allImageUrls = [...existingUrls, ...newlyUploadedUrls]
+        updateData({ images: allImageUrls })
+
+      } else {
+        throw new Error(result.message || 'Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during upload.'
+      setValidationErrors(prev => [...prev, errorMessage])
+      // Mark the failed files with an error message
+      setSelectedPhotos(prev => 
+        prev.map(p => {
+          if (filesToUpload.some(f => f.id === p.id)) {
+            return { ...p, isUploading: false, error: 'Upload failed' }
+          }
+          return p
+        })
+      )
+    } finally {
+      setIsUploading(false)
+    }
+  }, [selectedPhotos, updateData])
+
+  // Handles file selection from input or drag-and-drop
+  const handleFileSelect = useCallback((files: FileList | null) => {
     if (!files) return
 
     const fileArray = Array.from(files)
-    
-    // Validate files
     const { valid, invalid } = validateImageFiles(fileArray)
-    
-    // Show validation errors if any
+
     if (invalid.length > 0) {
       const errors = invalid.map(item => `${item.file.name}: ${item.reason}`)
       setValidationErrors(errors)
-      console.warn('Invalid files:', invalid)
     } else {
       setValidationErrors([])
     }
 
-    // Only process valid files
     if (valid.length > 0) {
       const newPhotos: PhotoFile[] = valid.map(file => ({
         id: Math.random().toString(36).substring(2, 9),
@@ -78,155 +141,71 @@ function AddListingStepTwoPhotosOptimized() {
       }))
 
       setSelectedPhotos(prev => [...prev, ...newPhotos])
-      setShowUploadModal(false)
       setShowPreviewModal(true)
+      
+      // Automatically trigger the upload
+      handleUpload(newPhotos)
     }
-  }
+  }, [handleUpload])
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFileSelect(event.target.files)
   }
 
-  const handleDragEnter = (e: React.DragEvent) => {
+  const handleDragEvents = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setIsDragging(true)
+    } else if (e.type === 'dragleave') {
+      setIsDragging(false)
+    }
   }
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-
+    handleDragEvents(e)
     const files = e.dataTransfer.files
     handleFileSelect(files)
   }
 
   const handleRemovePhoto = (photoId: string) => {
     setSelectedPhotos(prev => {
-      const updated = prev.filter(photo => photo.id !== photoId)
-      // Clean up object URL to prevent memory leaks
       const photoToRemove = prev.find(photo => photo.id === photoId)
+      const updatedPhotos = prev.filter(photo => photo.id !== photoId)
+
       if (photoToRemove) {
         URL.revokeObjectURL(photoToRemove.preview)
+        
+        if (photoToRemove.uploaded && photoToRemove.uploadUrl) {
+          const remainingUrls = updatedPhotos
+            .filter(p => p.uploaded && p.uploadUrl)
+            .map(p => p.uploadUrl!)
+          updateData({ images: remainingUrls })
+        }
       }
-      
-      // Update store if photo was uploaded
-      const photoToRemoveWasUploaded = photoToRemove?.uploaded && photoToRemove?.uploadUrl
-      if (photoToRemoveWasUploaded) {
-        const remainingUploadedUrls = updated
-          .filter(photo => photo.uploaded && photo.uploadUrl)
-          .map(photo => photo.uploadUrl!)
-        updateData({ images: remainingUploadedUrls })
-      }
-      
-      return updated
+      return updatedPhotos
     })
-  }
-
-  const handleCloseUploadModal = () => {
-    setShowUploadModal(false)
   }
 
   const handleClosePreviewModal = () => {
     setShowPreviewModal(false)
   }
-
-  const handleUpload = async () => {
-    const filesToUpload = selectedPhotos.filter(photo => !photo.uploaded)
-    
-    if (filesToUpload.length === 0) {
-      // All photos are already uploaded, just close modal
-      setShowPreviewModal(false)
-      return
-    }
-
-    setIsUploading(true)
-    
-    try {
-      // Update individual photo upload status
-      setSelectedPhotos(prev => prev.map(photo => {
-        if (!photo.uploaded) {
-          return { ...photo, isUploading: true, error: undefined }
-        }
-        return photo
-      }))
-
-      // Upload the images
-      const result = await uploadImages(
-        filesToUpload.map(photo => photo.file),
-        {
-          optimize: true,
-          onProgress: (progress) => {
-            // Update individual photo upload status
-            setSelectedPhotos(prev => prev.map(photo => {
-              const progressItem = progress.find(p => p.file === photo.file)
-              if (progressItem) {
-                return {
-                  ...photo,
-                  isUploading: progressItem.status === 'uploading',
-                  uploaded: progressItem.status === 'completed',
-                  uploadUrl: progressItem.result?.data.url,
-                  error: progressItem.error,
-                }
-              }
-              return photo
-            }))
-          }
-        }
-      )
-
-      if (result.success) {
-        // Get all uploaded URLs from the result
-        const newlyUploadedUrls = result.data
-          .filter(uploadResult => uploadResult.success)
-          .map(uploadResult => uploadResult.data.url)
-
-        // Get existing uploaded URLs from the current selectedPhotos
-        const existingUrls = selectedPhotos
-          .filter(photo => photo.uploaded && photo.uploadUrl)
-          .map(photo => photo.uploadUrl!)
-
-        // Combine all URLs
-        const allImageUrls = [...existingUrls, ...newlyUploadedUrls]
-
-        updateData({ images: allImageUrls })
-        console.log('Images uploaded successfully:', allImageUrls)
-      } else {
-        throw new Error(result.message || 'Upload failed')
-      }
-
-      setShowPreviewModal(false)
-    } catch (error) {
-      console.error('Upload failed:', error)
-      setValidationErrors([error instanceof Error ? error.message : 'Upload failed'])
-    } finally {
-      setIsUploading(false)
-    }
+  
+  const handleAddMorePhotos = () => {
+    fileInputRef.current?.click()
   }
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="space-y-6 sm:space-y-8">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="space-y-6">
           {/* Header */}
-          <div className="space-y-3">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900">
-              Add some photos of your house
+          <div className="text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              Showcase your property
             </h2>
-            <p className="text-base sm:text-lg text-slate-600">
-              You'll need 5 photos to get started. You can add more or make changes later.
+            <p className="mt-2 text-base sm:text-lg text-slate-600">
+              Upload at least 5 photos. High-quality images attract more interest.
             </p>
           </div>
 
@@ -237,7 +216,7 @@ function AddListingStepTwoPhotosOptimized() {
                 <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <h4 className="text-sm font-medium text-red-800">Upload Errors</h4>
-                  <ul className="mt-1 text-sm text-red-700 space-y-1">
+                  <ul className="mt-1 text-sm text-red-700 list-disc list-inside space-y-1">
                     {validationErrors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -247,273 +226,174 @@ function AddListingStepTwoPhotosOptimized() {
             </div>
           )}
 
-          {/* Photo Upload Section */}
-          <div className="flex flex-col items-center justify-center py-12 sm:py-16 space-y-6 sm:space-y-8">
-            {/* Camera Icon */}
-            <div className="flex items-center justify-center">
-              <Image
-                src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758300393/rentverse-base/image_15_schljx.png"
-                alt="Upload Photos"
-                width={80}
-                height={80}
-                className="w-20 h-20 sm:w-30 sm:h-30 object-contain"
-              />
-            </div>
+          {/* Photo Grid & Upload Area */}
+          <div 
+            className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${selectedPhotos.length > 0 ? 'mb-6' : ''}`}
+            onDragEnter={handleDragEvents}
+            onDragOver={handleDragEvents}
+          >
+            {selectedPhotos.map((photo, index) => (
+              <div key={photo.id} className="relative group aspect-square">
+                <Image
+                  src={photo.preview}
+                  alt={`Selected photo ${index + 1}`}
+                  width={200}
+                  height={200}
+                  className="w-full h-full object-cover rounded-xl"
+                />
+                
+                {/* Overlays for status */}
+                {photo.isUploading && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center rounded-xl">
+                    <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-white text-sm mt-2">Uploading...</span>
+                  </div>
+                )}
+                {photo.uploaded && !photo.isUploading && (
+                  <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  </div>
+                )}
+                {photo.error && (
+                  <div className="absolute inset-0 bg-red-500 bg-opacity-70 flex flex-col items-center justify-center text-white p-2 text-center rounded-xl">
+                    <AlertCircle size={24} />
+                    <span className="text-xs font-semibold mt-1">{photo.error}</span>
+                  </div>
+                )}
 
-            {/* Add Photos Button - Mobile Optimized */}
-            <button
-              onClick={handleAddPhotos}
-              className="w-full sm:w-auto px-6 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-900 font-medium hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 text-base sm:text-lg"
+                {/* Remove button */}
+                <button
+                  onClick={() => handleRemovePhoto(photo.id)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 z-10"
+                  disabled={photo.isUploading}
+                  aria-label="Remove photo"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            
+            {/* Dropzone / Upload Button */}
+            <div
+              className={`aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-4 transition-all duration-300 cursor-pointer
+                ${isDragging ? 'border-slate-500 bg-slate-100' : 'border-slate-300 hover:border-slate-400 hover:bg-slate-50'}`
+              }
+              onClick={handleBrowseFiles}
+              onDragLeave={handleDragEvents}
+              onDrop={handleDrop}
             >
-              Add photos
-            </button>
-
-            {/* Hidden File Input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFileInputChange}
-              className="hidden"
-            />
+              <Camera size={40} className="text-slate-400 mb-2" />
+              <p className="font-semibold text-slate-700">Add Photos</p>
+              <p className="text-sm text-slate-500">or drag & drop</p>
+            </div>
           </div>
+          
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            onChange={handleFileInputChange}
+            className="hidden"
+          />
 
-          {/* Selected Photos Count */}
+          {/* Summary and action button if needed */}
           {selectedPhotos.length > 0 && (
-            <div className="text-center">
-              <p className="text-slate-600 text-base sm:text-lg">
-                {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected
+            <div className="text-center mt-6">
+              <p className="text-slate-600 text-lg">
+                {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} added.
               </p>
               <button
                 onClick={() => setShowPreviewModal(true)}
-                className="mt-2 text-slate-900 font-medium hover:text-slate-700 transition-colors text-base sm:text-lg"
+                className="mt-2 text-slate-900 font-semibold hover:text-slate-700 transition-colors"
               >
-                View selected photos
+                Manage Photos
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Upload Modal (Drag & Drop) - Mobile Optimized */}
-      {showUploadModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
-            onClick={handleCloseUploadModal}
-          />
-
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl max-w-md w-full flex flex-col max-h-[90vh]">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200">
-              <div className="flex items-center space-x-3">
-                <h3 className="text-lg sm:text-xl font-semibold text-slate-900">Upload photos</h3>
-                <span className="text-sm text-slate-500">No items selected</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleBrowseFiles}
-                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                  title="Browse files"
-                >
-                  <Plus size={20} />
-                </button>
-                <button
-                  onClick={handleCloseUploadModal}
-                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Drag & Drop Area */}
-            <div className="flex-1 p-4 sm:p-6">
-              <div
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                className={`
-                  border-2 border-dashed rounded-xl p-8 sm:p-12 text-center transition-all h-full flex flex-col justify-center
-                  ${isDragging
-                  ? 'border-slate-400 bg-slate-50'
-                  : 'border-slate-300 bg-slate-25'
-                }
-                `}
-              >
-                {/* Camera Icon */}
-                <div className="flex justify-center mb-4">
-                  <Image
-                    src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758300393/rentverse-base/image_15_schljx.png"
-                    alt="Upload"
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                  />
-                </div>
-
-                {/* Text */}
-                <h4 className="text-base sm:text-lg font-medium text-slate-900 mb-2">
-                  Drag and drop
-                </h4>
-                <p className="text-sm text-slate-600 mb-6">
-                  or browse for photos
-                </p>
-
-                {/* Browse Button */}
-                <button
-                  onClick={handleBrowseFiles}
-                  className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors mx-auto"
-                >
-                  Browse
-                </button>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-slate-200">
-              <button
-                onClick={handleCloseUploadModal}
-                className="px-6 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpload}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
-                disabled={selectedPhotos.length === 0}
-              >
-                Upload
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Photo Preview Modal - Mobile Optimized */}
+      {/* Photo Management Modal */}
       {showPreviewModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black bg-opacity-30 backdrop-blur-sm"
-            onClick={handleClosePreviewModal}
-          />
-
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={handleClosePreviewModal} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 flex-shrink-0">
-              <div className="flex items-center space-x-3">
-                <h3 className="text-lg sm:text-xl font-semibold text-slate-900">Upload photos</h3>
-                <span className="text-sm text-slate-500">
-                  {selectedPhotos.length} item{selectedPhotos.length !== 1 ? 's' : ''} selected
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
+              <h3 className="text-xl font-bold text-slate-900">Manage Your Photos</h3>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={handleAddPhotos}
-                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                  onClick={handleAddMorePhotos}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-800 rounded-lg font-semibold hover:bg-slate-200 transition-colors text-sm"
                   title="Add more photos"
                 >
-                  <Plus size={20} />
+                  <Plus size={16} /> Add More
                 </button>
-                <button
-                  onClick={handleClosePreviewModal}
-                  className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
+                <button onClick={handleClosePreviewModal} className="p-2 text-slate-500 hover:text-slate-800"><X size={20} /></button>
               </div>
             </div>
 
             {/* Photos Grid */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {selectedPhotos.map((photo, index) => (
-                  <div key={photo.id} className="relative group">
-                    <div className="aspect-square rounded-xl overflow-hidden bg-slate-100">
-                      <Image
-                        src={photo.preview}
-                        alt={`Selected photo ${index + 1}`}
-                        width={200}
-                        height={200}
-                        className="w-full h-full object-cover"
-                      />
-                      
-                      {/* Upload overlay */}
-                      {photo.isUploading && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                          <div className="text-white text-center">
-                            <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <span className="text-xs sm:text-sm">Uploading...</span>
-                          </div>
-                        </div>
-                      )}
+                  <div key={photo.id} className="relative group aspect-square">
+                    <Image
+                      src={photo.preview}
+                      alt={`Photo preview ${index + 1}`}
+                      width={200}
+                      height={200}
+                      className="w-full h-full object-cover rounded-xl shadow-sm"
+                    />
+                    
+                    {photo.isUploading && (
+                      <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center rounded-xl">
+                        <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                    {photo.uploaded && !photo.isUploading && (
+                       <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center shadow-md">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" /></svg>
+                      </div>
+                    )}
+                    {photo.error && (
+                      <div className="absolute inset-0 bg-red-600 bg-opacity-80 flex flex-col items-center justify-center text-white p-2 text-center rounded-xl">
+                        <AlertCircle size={24} />
+                        <span className="text-xs font-semibold mt-1">Failed</span>
+                      </div>
+                    )}
 
-                      {/* Upload success indicator */}
-                      {photo.uploaded && !photo.isUploading && (
-                        <div className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 text-white rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-
-                      {/* Upload error indicator */}
-                      {photo.error && (
-                        <div className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
-                          <AlertCircle size={12} />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Remove Button */}
                     <button
                       onClick={() => handleRemovePhoto(photo.id)}
-                      className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 bg-slate-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-700 z-10"
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-slate-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-red-600 focus:outline-none z-10"
                       disabled={photo.isUploading}
+                      aria-label="Remove photo"
                     >
-                      <X size={12} />
+                      <X size={16} />
                     </button>
-
-                    {/* Photo Index */}
-                    <div className="absolute top-2 left-2 w-5 h-5 sm:w-6 sm:h-6 bg-slate-900 bg-opacity-75 text-white text-xs rounded-full flex items-center justify-center">
-                      {index + 1}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs text-center py-0.5 rounded-b-xl">
+                      #{index + 1}
                     </div>
                   </div>
                 ))}
               </div>
+              {selectedPhotos.length === 0 && (
+                 <div className="text-center py-16">
+                    <p className="text-slate-500">No photos have been added yet.</p>
+                 </div>
+              )}
             </div>
 
             {/* Footer */}
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 border-t border-slate-200 flex-shrink-0 space-y-3 sm:space-y-0">
-              <button
+            <div className="flex justify-end p-5 border-t border-slate-200">
+               <button
                 onClick={handleClosePreviewModal}
-                className="w-full sm:w-auto px-6 py-2 text-slate-600 hover:text-slate-800 transition-colors text-center sm:text-left"
+                className="px-6 py-2.5 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-900 transition-colors disabled:bg-slate-400"
                 disabled={isUploading}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpload}
-                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-base sm:text-sm"
-                disabled={selectedPhotos.length === 0 || isUploading}
-              >
-                {isUploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Uploading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} />
-                    <span>Upload {selectedPhotos.filter(p => !p.uploaded).length} photos</span>
-                  </>
-                )}
+                {isUploading ? 'Uploading...' : 'Done'}
               </button>
             </div>
           </div>
