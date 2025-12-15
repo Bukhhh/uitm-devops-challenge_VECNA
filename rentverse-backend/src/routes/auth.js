@@ -297,9 +297,11 @@ router.post(
       });
 
       // Send OTP email (via service)
+      let emailSent = false;
       try {
         const emailResult = await emailService.sendOTPEmail(email, token);
         console.log(`✅ OTP email sent successfully to ${email} - Message ID: ${emailResult.messageId}`);
+        emailSent = true;
       } catch (emailError) {
         console.error(`❌ Failed to send OTP email to ${email}:`, emailError.message);
         // Don't fail the login process if email fails, but log it
