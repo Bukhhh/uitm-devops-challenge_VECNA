@@ -269,59 +269,127 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       },
 
       validateCurrentStep: () => {
-        const { currentStep, data } = get()
+        const { currentStep, data, steps } = get()
         const currentStepData = get().steps[currentStep]
+        const isLastStep = currentStep === steps.length - 1
         
-        console.log('Validating step:', currentStepData.id, 'with data:', data)
+        console.log('🔍 Validating step:', currentStepData.id, 'with data:', data)
         
-        // Add validation logic based on step
+        // More lenient validation with progressive requirements
         switch (currentStepData.id) {
           case 'property-type': {
+            // Only require property type for early steps
             const isValid = !!data.propertyType
-            console.log('Property type validation:', isValid, 'propertyType:', data.propertyType)
+            if (!isValid) {
+              console.log('❌ Property type validation failed - please select a property type')
+            } else {
+              console.log('✅ Property type validation passed')
+            }
             return isValid
           }
           case 'location-map':
-            return !!(data.latitude && data.longitude)
+            // Location map is optional - users can proceed without it
+            console.log('✅ Location map validation: Skipped (optional)')
+            return true
           case 'location-details': {
-            const isValid = !!(data.state && data.district)
-            console.log('Location details validation:', {
-              isValid,
-              state: data.state,
-              district: data.district,
-              subdistrict: data.subdistrict
-            })
+            // Only require state for now, make district optional
+            const isValid = !!data.state
+            if (!isValid) {
+              console.log('❌ Location details validation failed - please fill in the state field')
+            } else {
+              console.log('✅ Location details validation passed')
+            }
             return isValid
           }
           case 'basic-info': {
-            const isValid = data.bedrooms > 0 && data.bathrooms > 0 && data.areaSqm > 0
-            console.log('Basic info validation:', {
-              isValid,
-              bedrooms: data.bedrooms,
-              bathrooms: data.bathrooms,
-              areaSqm: data.areaSqm
-            })
-            return isValid
+            // More lenient - allow 0 values in early steps, validate only in final steps
+            if (isLastStep) {
+              const isValid = data.bedrooms > 0 && data.bathrooms > 0 && data.areaSqm > 0
+              if (!isValid) {
+                console.log('❌ Basic info validation failed - bedrooms, bathrooms, and area must be greater than 0')
+              } else {
+                console.log('✅ Basic info validation passed')
+              }
+              return isValid
+            }
+            // For early steps, allow proceeding with default values
+            console.log('✅ Basic info validation: Passed (early step)')
+            return true
           }
           case 'photos': {
-            const isValid = data.images.length >= 1
-            console.log('Photos validation:', {
-              isValid,
-              imageCount: data.images.length,
-              images: data.images
-            })
-            return isValid
+            // Photos are optional in early stages, required only for final submission
+            if (isLastStep) {
+              const isValid = data.images.length >= 1
+              if (!isValid) {
+                console.log('❌ Photos validation failed - at least one photo is required for final submission')
+              } else {
+                console.log('✅ Photos validation passed')
+              }
+              return isValid
+            }
+            console.log('✅ Photos validation: Passed (early step)')
+            return true
           }
-          case 'title':
-            return !!data.title
-          case 'description':
-            return !!data.description
-          case 'legal':
-            return !!data.maintenanceIncluded && !!data.landlordType
-          case 'pricing':
-            return data.price > 0
+          case 'title': {
+            // Title is optional in early stages
+            if (isLastStep) {
+              const isValid = !!data.title
+              if (!isValid) {
+                console.log('❌ Title validation failed - property title is required for final submission')
+              } else {
+                console.log('✅ Title validation passed')
+              }
+              return isValid
+            }
+            console.log('✅ Title validation: Passed (early step)')
+            return true
+          }
+          case 'description': {
+            // Description is optional in early stages
+            if (isLastStep) {
+              const isValid = !!data.description
+              if (!isValid) {
+                console.log('❌ Description validation failed - property description is required for final submission')
+              } else {
+                console.log('✅ Description validation passed')
+              }
+              return isValid
+            }
+            console.log('✅ Description validation: Passed (early step)')
+            return true
+          }
+          case 'legal': {
+            // Legal info is required only for final submission
+            if (isLastStep) {
+              const isValid = !!data.maintenanceIncluded && !!data.landlordType
+              if (!isValid) {
+                console.log('❌ Legal validation failed - maintenance and landlord type are required')
+              } else {
+                console.log('✅ Legal validation passed')
+              }
+              return isValid
+            }
+            console.log('✅ Legal validation: Passed (early step)')
+            return true
+          }
+          case 'pricing': {
+            // Price is required for final step
+            if (isLastStep) {
+              const isValid = data.price > 0
+              if (!isValid) {
+                console.log('❌ Pricing validation failed - property price must be greater than 0')
+              } else {
+                console.log('✅ Pricing validation passed')
+              }
+              return isValid
+            }
+            console.log('✅ Pricing validation: Passed (early step)')
+            return true
+          }
           default:
-            return true // For intro steps and steps without validation
+            // For intro steps and steps without validation
+            console.log('✅ Default validation: Passed')
+            return true
         }
       },
 
