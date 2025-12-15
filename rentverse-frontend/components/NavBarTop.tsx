@@ -58,7 +58,12 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
   const showProfile = isMounted && isLoggedIn && user;
 
   return (
-    <div className={clsx(['w-full fixed z-50', 'px-6 py-4 bg-white top-0 list-none border-b border-slate-200'])}>
+    <div className={clsx([
+      'w-full fixed top-0 left-0 right-0 z-50',
+      'px-6 py-4 bg-white list-none border-b border-slate-200',
+      'transform-none transition-none duration-0',
+      'shadow-sm backdrop-blur-sm bg-white/95'
+    ])}>
       <div className={clsx(['w-full flex items-center justify-between relative', searchBoxType === 'full' && 'mb-8'])}>
         <Link href="/">
           <Image
