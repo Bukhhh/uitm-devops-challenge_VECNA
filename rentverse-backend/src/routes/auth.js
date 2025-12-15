@@ -23,6 +23,7 @@ const { passport, handleAppleSignIn } = require('../config/passport');
 
 // Import Services (Clean separation of concerns)
 const otpService = require('../services/otpService');
+const emailService = require('../utils/emailService');
 const aiService = require('../services/aiIntegration.service');
 const logger = require('../utils/logger');
 
@@ -296,7 +297,23 @@ router.post(
       });
 
       // Send OTP email (via service)
-      const emailSent = await otpService.sendOTPEmail(email, token);
+      try {
+        const emailResult = await emailService.sendOTPEmail(email, token);
+        console.log(`✅ OTP email sent successfully to ${email} - Message ID: ${emailResult.messageId}`);
+      } catch (emailError) {
+        console.error(`❌ Failed to send OTP email to ${email}:`, emailError.message);
+        // Don't fail the login process if email fails, but log it
+        await logger.log(
+          'EMAIL_SEND_FAILED',
+          user.id,
+          {
+            email,
+            error: emailError.message,
+            ipAddress,
+          },
+          ipAddress
+        );
+      }
 
       if (!emailSent) {
         console.warn(`⚠️ OTP email failed to send for ${email}`);
