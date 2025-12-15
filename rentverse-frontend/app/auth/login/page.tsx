@@ -2,6 +2,7 @@
 
 import NavBarTop from '@/components/NavBarTop'
 import ModalLogIn from '@/components/ModalLogIn'
+import NavBarBottom from '@/components/NavBarBottom'
 
 /**
  * Login Page - Uses the reusable ModalLogIn component
@@ -14,6 +15,7 @@ export default function LoginPage() {
       <div className="pt-20">
         <ModalLogIn isModal={false} />
       </div>
+      <NavBarBottom />
     </div>
   )
 }
