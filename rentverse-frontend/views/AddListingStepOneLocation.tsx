@@ -84,7 +84,7 @@ function AddListingStepOneLocation() {
   // Initialize MapTiler API key
   useEffect(() => {
     if (!maptilersdk.config.apiKey) {
-      maptilersdk.config.apiKey = process.env.NEXT_PUBLIC_MAPTILER_API || ''
+      maptilersdk.config.apiKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || ''
     }
   }, [])
 
@@ -203,15 +203,15 @@ function AddListingStepOneLocation() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-8">
-        <div className="space-y-8">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Header */}
           <div className="space-y-3">
-            <h2 className="text-3xl font-serif text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-serif text-slate-900">
               Confirm your address
             </h2>
-            <p className="text-lg text-slate-600">
-              Your address is only shared with guests after they&apos;ve made a reservation.
+            <p className="text-base sm:text-lg text-slate-600">
+              Your address is only shared with guests after they've made a reservation.
             </p>
           </div>
 
@@ -222,7 +222,7 @@ function AddListingStepOneLocation() {
                 Where is your house located?
               </label>
 
-              {/* Grouped Location Dropdowns */}
+              {/* Grouped Location Dropdowns - Mobile Optimized */}
               <div className="bg-white border-2 border-slate-200 rounded-2xl relative">
                 {/* State Dropdown */}
                 <div className="relative">
@@ -230,20 +230,19 @@ function AddListingStepOneLocation() {
                     onClick={() => setShowStateDropdown(!showStateDropdown)}
                     className="w-full px-4 py-4 text-left hover:bg-slate-50 focus:bg-slate-50 focus:outline-none transition-colors flex items-center justify-between rounded-t-2xl"
                   >
-                    <span className={selectedState ? 'text-slate-900' : 'text-slate-500'}>
+                    <span className={`${selectedState ? 'text-slate-900' : 'text-slate-500'} text-sm sm:text-base`}>
                       {selectedState ? selectedState.replace('-', ' ') : 'Penang'}
                     </span>
-                    <ChevronDown size={20} className="text-slate-400" />
+                    <ChevronDown size={20} className="text-slate-400 flex-shrink-0" />
                   </button>
 
                   {showStateDropdown && (
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
                       {states.map((state, index) => (
                         <button
                           key={index}
                           onClick={() => handleStateSelect(state)}
-                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize"
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize text-sm sm:text-base"
                         >
                           {state.replace('-', ' ')}
                         </button>
@@ -262,20 +261,19 @@ function AddListingStepOneLocation() {
                     disabled={!selectedState}
                     className="w-full px-4 py-4 text-left hover:bg-slate-50 focus:bg-slate-50 focus:outline-none transition-colors flex items-center justify-between disabled:bg-white disabled:cursor-not-allowed"
                   >
-                    <span className={selectedDistrict ? 'text-slate-900' : 'text-slate-500'}>
+                    <span className={`${selectedDistrict ? 'text-slate-900' : 'text-slate-500'} text-sm sm:text-base`}>
                       {selectedDistrict ? selectedDistrict.replace('-', ' ') : 'Select location'}
                     </span>
-                    <ChevronDown size={20} className="text-slate-400" />
+                    <ChevronDown size={20} className="text-slate-400 flex-shrink-0" />
                   </button>
 
                   {showDistrictDropdown && selectedState && (
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
                       {districts.map((district, index) => (
                         <button
                           key={index}
                           onClick={() => handleDistrictSelect(district)}
-                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize"
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize text-sm sm:text-base"
                         >
                           {district.replace('-', ' ')}
                         </button>
@@ -294,20 +292,19 @@ function AddListingStepOneLocation() {
                     disabled={!selectedDistrict}
                     className="w-full px-4 py-4 text-left hover:bg-slate-50 focus:bg-slate-50 focus:outline-none transition-colors flex items-center justify-between disabled:bg-white disabled:cursor-not-allowed rounded-b-2xl"
                   >
-                    <span className={selectedSubdistrict ? 'text-slate-900' : 'text-slate-500'}>
+                    <span className={`${selectedSubdistrict ? 'text-slate-900' : 'text-slate-500'} text-sm sm:text-base`}>
                       {selectedSubdistrict ? selectedSubdistrict.replace('-', ' ') : 'Select subdistrict'}
                     </span>
-                    <ChevronDown size={20} className="text-slate-400" />
+                    <ChevronDown size={20} className="text-slate-400 flex-shrink-0" />
                   </button>
 
                   {showSubdistrictDropdown && selectedDistrict && (
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl z-[9999] max-h-60 overflow-y-auto">
                       {subdistricts.map((subdistrict, index) => (
                         <button
                           key={index}
                           onClick={() => handleSubdistrictSelect(subdistrict)}
-                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize"
+                          className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 capitalize text-sm sm:text-base"
                         >
                           {subdistrict.name.replace('-', ' ')}
                         </button>
@@ -328,7 +325,7 @@ function AddListingStepOneLocation() {
                 value={streetAddress}
                 onChange={(e) => setStreetAddress(e.target.value)}
                 placeholder="House name/number + street/road"
-                className="w-full px-4 py-4 border-2 border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-colors"
+                className="w-full px-4 py-4 border-2 border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-colors text-sm sm:text-base"
               />
             </div>
 
@@ -342,7 +339,7 @@ function AddListingStepOneLocation() {
                 value={houseNumber}
                 onChange={(e) => setHouseNumber(e.target.value)}
                 placeholder="e.g. 77/139"
-                className="w-full px-4 py-4 border-2 border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-colors"
+                className="w-full px-4 py-4 border-2 border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-colors text-sm sm:text-base"
               />
               <p className="text-sm text-slate-500">
                 House number or unit number shows in blue, yellow book or official property documentation.
@@ -353,18 +350,18 @@ function AddListingStepOneLocation() {
           {/* Divider */}
           <hr className="border-slate-200" />
 
-          {/* Map Section */}
+          {/* Map Section - Mobile Optimized */}
           <div className="space-y-6">
             {/* Map Header */}
-            <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4 p-4 bg-slate-50 rounded-xl">
               <Image
                 src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758297955/rentverse-base/image_13_uzxdvr.png"
                 width={40}
                 height={40}
                 alt="Location icon"
-                className="w-10 h-10 flex-shrink-0"
+                className="w-10 h-10 flex-shrink-0 mx-auto sm:mx-0"
               />
-              <div className="space-y-1">
+              <div className="space-y-1 text-center sm:text-left">
                 <h4 className="font-medium text-slate-900">Precise location required</h4>
                 <p className="text-sm text-slate-600">
                   Please drag the marker to the exact location of your unit for accurate property positioning.
@@ -372,8 +369,8 @@ function AddListingStepOneLocation() {
               </div>
             </div>
 
-            {/* Map Container */}
-            <div className="w-full h-80 rounded-xl overflow-hidden border border-slate-200">
+            {/* Map Container - Mobile Optimized Height */}
+            <div className="w-full h-64 sm:h-80 rounded-xl overflow-hidden border border-slate-200">
               <div
                 ref={mapContainer}
                 className="map w-full h-full"
@@ -382,7 +379,7 @@ function AddListingStepOneLocation() {
             </div>
 
             {/* Coordinates Display */}
-            <div className="text-center text-sm text-slate-500">
+            <div className="text-center text-sm text-slate-500 font-mono">
               Current position: {mapCenter[1].toFixed(6)}, {mapCenter[0].toFixed(6)}
             </div>
           </div>
@@ -409,7 +406,7 @@ function AddListingStepOneLocation() {
             </div>
           )}
 
-          {/* Navigation Controls */}
+          {/* Navigation Controls - Mobile Optimized */}
           <div className="flex justify-center pt-6">
             <button
               onClick={() => {
@@ -429,7 +426,7 @@ function AddListingStepOneLocation() {
                 }
               }}
               disabled={!selectedState || !selectedDistrict}
-              className={`px-8 py-3 rounded-lg font-medium transition-colors ${
+              className={`w-full sm:w-auto px-8 py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                 selectedState && selectedDistrict
                   ? 'bg-slate-900 text-white hover:bg-slate-800'
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'

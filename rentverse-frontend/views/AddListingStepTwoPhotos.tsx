@@ -145,6 +145,14 @@ function AddListingStepTwoPhotos() {
     setIsUploading(true)
     
     try {
+      // Update individual photo upload status
+      setSelectedPhotos(prev => prev.map(photo => {
+        if (!photo.uploaded) {
+          return { ...photo, isUploading: true, error: undefined }
+        }
+        return photo
+      }))
+
       // Upload the images
       const result = await uploadImages(
         filesToUpload.map(photo => photo.file),
@@ -185,6 +193,8 @@ function AddListingStepTwoPhotos() {
 
         updateData({ images: allImageUrls })
         console.log('Images uploaded successfully:', allImageUrls)
+      } else {
+        throw new Error(result.message || 'Upload failed')
       }
 
       setShowPreviewModal(false)
@@ -198,15 +208,15 @@ function AddListingStepTwoPhotos() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-8">
-        <div className="space-y-8">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Header */}
           <div className="space-y-3">
-            <h2 className="text-3xl font-semibold text-slate-900">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900">
               Add some photos of your house
             </h2>
-            <p className="text-lg text-slate-600">
-              You&apos;ll need 5 photos to get started. You can add more or make changes later.
+            <p className="text-base sm:text-lg text-slate-600">
+              You'll need 5 photos to get started. You can add more or make changes later.
             </p>
           </div>
 
@@ -218,8 +228,8 @@ function AddListingStepTwoPhotos() {
                 <div>
                   <h4 className="text-sm font-medium text-red-800">Upload Errors</h4>
                   <ul className="mt-1 text-sm text-red-700 space-y-1">
-                    {validationErrors.map((error) => (
-                      <li key={error}>{error}</li>
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
                     ))}
                   </ul>
                 </div>
@@ -228,22 +238,22 @@ function AddListingStepTwoPhotos() {
           )}
 
           {/* Photo Upload Section */}
-          <div className="flex flex-col items-center justify-center py-16 space-y-8">
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16 space-y-6 sm:space-y-8">
             {/* Camera Icon */}
             <div className="flex items-center justify-center">
               <Image
                 src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758300393/rentverse-base/image_15_schljx.png"
                 alt="Upload Photos"
-                width={120}
-                height={120}
-                className="w-30 h-30 object-contain"
+                width={80}
+                height={80}
+                className="w-20 h-20 sm:w-30 sm:h-30 object-contain"
               />
             </div>
 
-            {/* Add Photos Button */}
+            {/* Add Photos Button - Mobile Optimized */}
             <button
               onClick={handleAddPhotos}
-              className="px-6 py-3 bg-white border-2 border-slate-200 rounded-xl text-slate-900 font-medium hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2"
+              className="w-full sm:w-auto px-6 py-4 bg-white border-2 border-slate-200 rounded-xl text-slate-900 font-medium hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:ring-offset-2 text-base sm:text-lg"
             >
               Add photos
             </button>
@@ -262,12 +272,12 @@ function AddListingStepTwoPhotos() {
           {/* Selected Photos Count */}
           {selectedPhotos.length > 0 && (
             <div className="text-center">
-              <p className="text-slate-600">
+              <p className="text-slate-600 text-base sm:text-lg">
                 {selectedPhotos.length} photo{selectedPhotos.length !== 1 ? 's' : ''} selected
               </p>
               <button
                 onClick={() => setShowPreviewModal(true)}
-                className="mt-2 text-slate-900 font-medium hover:text-slate-700 transition-colors"
+                className="mt-2 text-slate-900 font-medium hover:text-slate-700 transition-colors text-base sm:text-lg"
               >
                 View selected photos
               </button>
@@ -276,7 +286,7 @@ function AddListingStepTwoPhotos() {
         </div>
       </div>
 
-      {/* Upload Modal (Drag & Drop) */}
+      {/* Upload Modal (Drag & Drop) - Mobile Optimized */}
       {showUploadModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -286,11 +296,11 @@ function AddListingStepTwoPhotos() {
           />
 
           {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl max-w-md w-full flex flex-col">
+          <div className="relative bg-white rounded-2xl max-w-md w-full flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200">
               <div className="flex items-center space-x-3">
-                <h3 className="text-xl font-semibold text-slate-900">Upload photos</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-slate-900">Upload photos</h3>
                 <span className="text-sm text-slate-500">No items selected</span>
               </div>
               <div className="flex items-center space-x-2">
@@ -311,14 +321,14 @@ function AddListingStepTwoPhotos() {
             </div>
 
             {/* Drag & Drop Area */}
-            <div className="p-6">
+            <div className="flex-1 p-4 sm:p-6">
               <div
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 className={`
-                  border-2 border-dashed rounded-xl p-12 text-center transition-all
+                  border-2 border-dashed rounded-xl p-8 sm:p-12 text-center transition-all h-full flex flex-col justify-center
                   ${isDragging
                   ? 'border-slate-400 bg-slate-50'
                   : 'border-slate-300 bg-slate-25'
@@ -330,14 +340,14 @@ function AddListingStepTwoPhotos() {
                   <Image
                     src="https://res.cloudinary.com/dqhuvu22u/image/upload/f_webp/v1758300393/rentverse-base/image_15_schljx.png"
                     alt="Upload"
-                    width={64}
-                    height={64}
-                    className="w-16 h-16 object-contain"
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
                   />
                 </div>
 
                 {/* Text */}
-                <h4 className="text-lg font-medium text-slate-900 mb-2">
+                <h4 className="text-base sm:text-lg font-medium text-slate-900 mb-2">
                   Drag and drop
                 </h4>
                 <p className="text-sm text-slate-600 mb-6">
@@ -347,7 +357,7 @@ function AddListingStepTwoPhotos() {
                 {/* Browse Button */}
                 <button
                   onClick={handleBrowseFiles}
-                  className="px-6 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
+                  className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors mx-auto"
                 >
                   Browse
                 </button>
@@ -355,7 +365,7 @@ function AddListingStepTwoPhotos() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-slate-200">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-t border-slate-200">
               <button
                 onClick={handleCloseUploadModal}
                 className="px-6 py-2 text-slate-600 hover:text-slate-800 transition-colors"
@@ -374,7 +384,7 @@ function AddListingStepTwoPhotos() {
         </div>
       )}
 
-      {/* Photo Preview Modal */}
+      {/* Photo Preview Modal - Mobile Optimized */}
       {showPreviewModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -386,9 +396,9 @@ function AddListingStepTwoPhotos() {
           {/* Modal Content */}
           <div className="relative bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 flex-shrink-0">
               <div className="flex items-center space-x-3">
-                <h3 className="text-xl font-semibold text-slate-900">Upload photos</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-slate-900">Upload photos</h3>
                 <span className="text-sm text-slate-500">
                   {selectedPhotos.length} item{selectedPhotos.length !== 1 ? 's' : ''} selected
                 </span>
@@ -411,8 +421,8 @@ function AddListingStepTwoPhotos() {
             </div>
 
             {/* Photos Grid */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {selectedPhotos.map((photo, index) => (
                   <div key={photo.id} className="relative group">
                     <div className="aspect-square rounded-xl overflow-hidden bg-slate-100">
@@ -428,16 +438,16 @@ function AddListingStepTwoPhotos() {
                       {photo.isUploading && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                           <div className="text-white text-center">
-                            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                            <span className="text-sm">Uploading...</span>
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                            <span className="text-xs sm:text-sm">Uploading...</span>
                           </div>
                         </div>
                       )}
 
                       {/* Upload success indicator */}
                       {photo.uploaded && !photo.isUploading && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 bg-green-500 text-white rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
                         </div>
@@ -445,8 +455,8 @@ function AddListingStepTwoPhotos() {
 
                       {/* Upload error indicator */}
                       {photo.error && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
-                          <AlertCircle size={14} />
+                        <div className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center">
+                          <AlertCircle size={12} />
                         </div>
                       )}
                     </div>
@@ -454,15 +464,14 @@ function AddListingStepTwoPhotos() {
                     {/* Remove Button */}
                     <button
                       onClick={() => handleRemovePhoto(photo.id)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-700 z-10"
+                      className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 bg-slate-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-700 z-10"
                       disabled={photo.isUploading}
                     >
-                      <X size={14} />
+                      <X size={12} />
                     </button>
 
                     {/* Photo Index */}
-                    <div
-                      className="absolute top-2 left-2 w-6 h-6 bg-slate-900 bg-opacity-75 text-white text-xs rounded-full flex items-center justify-center">
+                    <div className="absolute top-2 left-2 w-5 h-5 sm:w-6 sm:h-6 bg-slate-900 bg-opacity-75 text-white text-xs rounded-full flex items-center justify-center">
                       {index + 1}
                     </div>
                   </div>
@@ -471,17 +480,17 @@ function AddListingStepTwoPhotos() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-slate-200 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-6 border-t border-slate-200 flex-shrink-0 space-y-3 sm:space-y-0">
               <button
                 onClick={handleClosePreviewModal}
-                className="px-6 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                className="w-full sm:w-auto px-6 py-2 text-slate-600 hover:text-slate-800 transition-colors text-center sm:text-left"
                 disabled={isUploading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpload}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-base sm:text-sm"
                 disabled={selectedPhotos.length === 0 || isUploading}
               >
                 {isUploading ? (
