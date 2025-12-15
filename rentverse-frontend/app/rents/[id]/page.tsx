@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import ContentWrapper from '@/components/ContentWrapper'
 import BarProperty from '@/components/BarProperty'
 import ImageGallery from '@/components/ImageGallery'
@@ -88,8 +89,10 @@ interface BookingResponse {
   }
 }
 
-function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+function RentDetailPage() {
+  const params = useParams()
+  const bookingId = params.id as string
+
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -99,7 +102,7 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
 
   useEffect(() => {
     const fetchBookingDetail = async () => {
-      if (!isLoggedIn || !id) {
+      if (!isLoggedIn || !bookingId) {
         setIsLoading(false)
         return
       }
@@ -112,7 +115,9 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
           return
         }
 
-        const response = await fetch(`/api/bookings/${id}`, {
+        console.log('🔍 Fetching booking with ID:', bookingId)
+
+        const response = await fetch(`/api/bookings/${bookingId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -127,12 +132,13 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
         const data: BookingResponse = await response.json()
         
         if (data.success) {
+          console.log('✅ Booking data fetched successfully:', data.data.booking)
           setBooking(data.data.booking)
         } else {
           setError('Failed to load booking details')
         }
       } catch (err) {
-        console.error('Error fetching booking details:', err)
+        console.error('❌ Error fetching booking details:', err)
         setError(err instanceof Error ? err.message : 'Failed to load booking details')
       } finally {
         setIsLoading(false)
@@ -140,7 +146,7 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
     }
 
     fetchBookingDetail()
-  }, [id, isLoggedIn])
+  }, [bookingId, isLoggedIn])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -177,7 +183,7 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
   }
 
   // Generate invoice number based on id
-  const invoiceNumber = `INV${id.toUpperCase().slice(0, 8)}`
+  const invoiceNumber = `INV${bookingId.toUpperCase().slice(0, 8)}`
 
   const handleShareableLink = async () => {
     if (!booking) return
@@ -319,7 +325,6 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
                 link.download = fileName
                 document.body.appendChild(link)
                 link.click()
-                document.body.removeChild(link)
               } else {
                 throw new Error('Unexpected response format')
               }
@@ -375,12 +380,23 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
         <div className="flex items-center justify-center py-20">
           <div className="text-center space-y-4">
             <p className="text-red-600">{error || 'Booking not found'}</p>
+            <p className="text-sm text-slate-500">
+              Booking ID: {bookingId}
+            </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors"
             >
               Try Again
             </button>
+            <div className="pt-4">
+              <button 
+                onClick={() => window.location.href = '/rents'} 
+                className="text-teal-600 hover:text-teal-700 font-medium"
+              >
+                ← Back to Rentals
+              </button>
+            </div>
           </div>
         </div>
       </ContentWrapper>
@@ -389,7 +405,10 @@ function RentDetailPage({ params }: { readonly params: Promise<{ id: string }> }
 
   return (
     <ContentWrapper>
-      <BarProperty title={`${booking.property.title} - ${invoiceNumber}`} />
+      <BarProperty 
+        title={`${booking.property.title} - ${invoiceNumber}`}
+        propertyId={booking.id}
+      />
 
       <section className="space-y-6">
         <ImageGallery images={booking.property.images || []} />
