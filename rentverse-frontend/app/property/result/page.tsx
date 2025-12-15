@@ -114,12 +114,12 @@ function ResultsPage() {
         {/* Property Card Results */}
         <div className={`w-full md:w-1/2 ${isMapView ? 'hidden' : 'block'}`}>
           {/* Header Result */}
-          <div className="flex justify-between items-center mb-5">
+          <div className="flex justify-between items-center mb-4 sm:mb-5">
             <div className="flex flex-col gap-2">
-              <h3 className="font-serif text-xl text-teal-900">
+              <h3 className="font-serif text-lg sm:text-xl text-teal-900">
                 {properties.length} homes within map area
               </h3>
-              <p className="text-base text-teal-800">
+              <p className="text-sm sm:text-base text-teal-800">
                 Showing 1 – {properties.length}
               </p>
             </div>
@@ -131,12 +131,12 @@ function ResultsPage() {
 
           {/* Vertical Scrollable Results */}
           <div className="h-[70vh] overflow-hidden">
-            {/* Mobile: 1 column */}
+            {/* Mobile: 1 column - Compact layout */}
             <div className="block sm:hidden h-full">
               <Swiper
                 direction="vertical"
                 slidesPerView="auto"
-                spaceBetween={16}
+                spaceBetween={4}
                 scrollbar={{
                   hide: false,
                   draggable: true,
@@ -151,7 +151,7 @@ function ResultsPage() {
               >
                 {properties.map((property) => (
                   <SwiperSlide key={property.id} className="h-auto!">
-                    <div className="pr-4 mb-4">
+                    <div className="pr-2 mb-2">
                       <CardProperty property={property} />
                     </div>
                   </SwiperSlide>
@@ -159,7 +159,7 @@ function ResultsPage() {
 
                 {/* Pagination as last slide */}
                 <SwiperSlide className="h-auto!">
-                  <div className="py-8 flex justify-center items-center pr-4">
+                  <div className="py-4 flex justify-center items-center pr-2">
                     <Pagination
                       currentPage={1}
                       totalPages={15}
@@ -177,7 +177,7 @@ function ResultsPage() {
               <Swiper
                 direction="vertical"
                 slidesPerView="auto"
-                spaceBetween={16}
+                spaceBetween={8}
                 scrollbar={{
                   hide: false,
                   draggable: true,
@@ -192,7 +192,7 @@ function ResultsPage() {
               >
                 {getGroupedProperties(2).map((group, index) => (
                   <SwiperSlide key={index} className="h-auto!">
-                    <div className="grid grid-cols-2 gap-4 pr-4 mb-4">
+                    <div className="grid grid-cols-2 gap-3 pr-4 mb-3">
                       {group.map((property) => (
                         <CardProperty key={property.id} property={property} />
                       ))}
@@ -202,7 +202,7 @@ function ResultsPage() {
 
                 {/* Pagination as last slide */}
                 <SwiperSlide className="h-auto!">
-                  <div className="py-8 flex justify-center items-center pr-4 col-span-2">
+                  <div className="py-6 flex justify-center items-center pr-4 col-span-2">
                     <Pagination
                       currentPage={1}
                       totalPages={15}
@@ -220,7 +220,7 @@ function ResultsPage() {
               <Swiper
                 direction="vertical"
                 slidesPerView="auto"
-                spaceBetween={16}
+                spaceBetween={12}
                 scrollbar={{
                   hide: false,
                   draggable: true,
@@ -235,7 +235,7 @@ function ResultsPage() {
               >
                 {properties.map((property) => (
                   <SwiperSlide key={property.id} className="h-auto!">
-                    <div className="pr-4 mb-4">
+                    <div className="pr-4 mb-3">
                       <CardProperty property={property} />
                     </div>
                   </SwiperSlide>
@@ -243,7 +243,7 @@ function ResultsPage() {
 
                 {/* Pagination as last slide */}
                 <SwiperSlide className="h-auto!">
-                  <div className="py-8 flex justify-center items-center pr-4">
+                  <div className="py-6 flex justify-center items-center pr-4">
                     <Pagination
                       currentPage={1}
                       totalPages={15}
