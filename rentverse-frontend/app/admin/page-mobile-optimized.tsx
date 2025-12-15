@@ -175,7 +175,7 @@ interface SystemMetricsResponse {
   }
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboardMobile() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
