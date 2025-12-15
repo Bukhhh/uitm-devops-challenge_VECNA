@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
+import { useRouter, useParams } from 'next/navigation'
 import ContentWrapper from '@/components/ContentWrapper'
 import ButtonCircle from '@/components/ButtonCircle'
 import { ArrowLeft, Save, Trash2, Upload, X, CheckCircle, AlertCircle } from 'lucide-react'
@@ -50,8 +50,8 @@ interface PropertyResponse {
 
 function ModifyPropertyPage() {
   const router = useRouter()
-
-  const propertyId = router.query.id as string
+  const params = useParams()
+  const propertyId = params.id as string
   const { propertyTypes, isLoading: isLoadingTypes } = usePropertyTypes()
   const { isLoggedIn, user } = useAuthStore()
 

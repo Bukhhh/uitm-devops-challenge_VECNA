@@ -375,6 +375,7 @@ export default function AdminDashboardMobile() {
         }
 
         const data: ActivityLogsResponse = await response.json()
+        console.log('Activity logs data (mobile):', data)
         
         if (data.success) {
           setActivityLogs(data.data.logs)
@@ -457,6 +458,7 @@ export default function AdminDashboardMobile() {
         }
 
         const data: SystemMetricsResponse = await response.json()
+        console.log('System metrics data (mobile):', data)
         
         if (data.success) {
           setSystemMetrics(data.data.metrics)

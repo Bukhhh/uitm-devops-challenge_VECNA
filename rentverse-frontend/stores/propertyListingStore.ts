@@ -101,7 +101,7 @@ const initialSteps: PropertyListingStep[] = [
   {
     id: 'location-details',
     title: 'Address Details',
-    component: 'AddListingStepOneLocation',
+    component: 'AddListingStepOneLocationOptimized',
     isCompleted: false,
     isAccessible: false,
   },
@@ -128,15 +128,8 @@ const initialSteps: PropertyListingStep[] = [
   },
   {
     id: 'photos',
-    title: 'Add Photos',
-    component: 'AddListingStepTwoPhotos',
-    isCompleted: false,
-    isAccessible: false,
-  },
-  {
-    id: 'management',
-    title: 'Management Settings',
-    component: 'AddListingStepTwoManage',
+    title: 'Add Photos & Management',
+    component: 'AddListingStepTwoPhotosOptimized',
     isCompleted: false,
     isAccessible: false,
   },
@@ -207,7 +200,7 @@ const initialData: PropertyListingData = {
 
 export const usePropertyListingStore = create<PropertyListingStore>()(
   persist(
-    (set, get) => ({
+    (set: any, get: any) => ({
       currentStep: 0,
       data: initialData,
       steps: initialSteps,
@@ -222,7 +215,7 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       },
 
       updateData: (updates: Partial<PropertyListingData>) => {
-        set((state) => ({
+        set((state: any) => ({
           data: { ...state.data, ...updates },
           isDirty: true,
         }))
@@ -234,9 +227,9 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
         
         if (nextStep < steps.length) {
           // Mark current step as completed and make next step accessible
-          set((state) => ({
+          set((state: any) => ({
             currentStep: nextStep,
-            steps: state.steps.map((step, index) => ({
+            steps: state.steps.map((step: any, index: number) => ({
               ...step,
               isCompleted: index === currentStep ? true : step.isCompleted,
               isAccessible: index === nextStep ? true : step.isAccessible,
@@ -259,8 +252,8 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       },
 
       markStepCompleted: (stepIndex: number) => {
-        set((state) => ({
-          steps: state.steps.map((step, index) => ({
+        set((state: any) => ({
+          steps: state.steps.map((step: any, index: number) => ({
             ...step,
             isCompleted: index === stepIndex ? true : step.isCompleted,
             isAccessible: index === stepIndex + 1 ? true : step.isAccessible,
@@ -492,7 +485,7 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
     {
       name: 'property-listing-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: (state: any) => ({
         currentStep: state.currentStep,
         data: state.data,
         steps: state.steps,

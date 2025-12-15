@@ -31,7 +31,12 @@ import {
   FileText,
   Home,
   Search,
-  Building
+  Building,
+  Settings,
+  BarChart3,
+  Users,
+  FileCheck,
+  AlertOctagon
 } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import { createApiUrl } from '@/utils/apiConfig'
@@ -105,6 +110,7 @@ interface ActivityLog {
   endpoint?: string
   method?: string
   responseTime?: number
+  details?: string
 }
 
 // System metrics interface
@@ -114,6 +120,9 @@ interface SystemMetrics {
   responseTime: number
   errorRate: number
   lastUpdated: string
+  uptime: number
+  memoryUsage: number
+  cpuUsage: number
 }
 
 // Rate limiting stats interface
@@ -123,6 +132,7 @@ interface RateLimitStats {
   windowMs: number
   resetTime: string
   blockedIPs: number
+  violations: number
 }
 
 // User interface for admin check
@@ -179,7 +189,7 @@ export default function AdminDashboard() {
   const [attackProgress, setAttackProgress] = useState(0)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
-  const [activeTab, setActiveTab] = useState<'properties' | 'security' | 'dashboard'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'overview' | 'properties' | 'security' | 'analytics'>('overview')
   const [showRealTimeData, setShowRealTimeData] = useState(true)
   const { isLoggedIn } = useAuthStore()
 
@@ -254,6 +264,7 @@ export default function AdminDashboard() {
         }
 
         const data: PendingApprovalsResponse = await response.json()
+        console.log('Pending approvals data:', data)
         
         if (data.success) {
           setPendingApprovals(data.data.approvals)
@@ -290,6 +301,7 @@ export default function AdminDashboard() {
 
         if (response.ok) {
           const data = await response.json()
+          console.log('Auto review status data:', data)
           if (data.success && data.data.status) {
             setAutoReviewEnabled(data.data.status.isEnabled)
           }
@@ -303,224 +315,8 @@ export default function AdminDashboard() {
     fetchAutoReviewStatus()
   }, [user])
 
-  // Fetch real activity logs from security monitoring API
-  useEffect(() => {
-    const fetchActivityLogs = async () => {
-      if (!user || user.role !== 'ADMIN') return
-
-      try {
-        setIsLoadingLogs(true)
-        const token = localStorage.getItem('authToken')
-        if (!token) {
-          throw new Error('Authentication token not found')
-        }
-
-        // Try real security monitoring API first
-        try {
-          const response = await fetch(createApiUrl('security-monitoring/activity?limit=50&days=7'), {
-            method: 'GET',
-            headers: {
-              'accept': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            
-            if (data.success && data.data.activities) {
-              // Transform backend data to frontend format
-              const transformedLogs: ActivityLog[] = data.data.activities.map((activity: any) => ({
-                id: activity.id,
-                timestamp: activity.createdAt,
-                user: activity.user?.email || activity.user?.name || 'Unknown',
-                action: activity.action.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l: string) => l.toUpperCase()),
-                ipAddress: activity.ipAddress || 'Unknown',
-                userAgent: activity.userAgent || 'Unknown',
-                status: activity.severity === 'CRITICAL' ? 'risk' : activity.type === 'SECURITY' ? 'risk' : 'success',
-                endpoint: activity.endpoint,
-                method: activity.method,
-                responseTime: activity.responseTime
-              }))
-              setActivityLogs(transformedLogs)
-              return
-            }
-          }
-        } catch (apiError) {
-          console.warn('Security monitoring API failed, using fallback:', apiError)
-        }
-
-        // Fallback to mock data if real API fails
-        const mockLogs: ActivityLog[] = [
-          {
-            id: '1',
-            timestamp: new Date().toISOString(),
-            user: 'admin@rentverse.com',
-            action: 'Property Approved',
-            ipAddress: '192.168.1.100',
-            userAgent: 'Mozilla/5.0...',
-            status: 'success'
-          },
-          {
-            id: '2',
-            timestamp: new Date(Date.now() - 300000).toISOString(),
-            user: 'user@example.com',
-            action: 'Login Attempt',
-            ipAddress: '203.45.67.89',
-            userAgent: 'Mozilla/5.0...',
-            status: 'failed'
-          }
-        ]
-        setActivityLogs(mockLogs)
-      } catch (err) {
-        console.error('Error fetching activity logs:', err)
-        // Use mock data as fallback
-        const mockLogs: ActivityLog[] = [
-          {
-            id: '1',
-            timestamp: new Date().toISOString(),
-            user: 'admin@rentverse.com',
-            action: 'Property Approved',
-            ipAddress: '192.168.1.100',
-            userAgent: 'Mozilla/5.0...',
-            status: 'success'
-          },
-          {
-            id: '2',
-            timestamp: new Date(Date.now() - 300000).toISOString(),
-            user: 'user@example.com',
-            action: 'Failed Login Attempt',
-            ipAddress: '203.45.67.89',
-            userAgent: 'Mozilla/5.0...',
-            status: 'failed'
-          }
-        ]
-        setActivityLogs(mockLogs)
-      } finally {
-        setIsLoadingLogs(false)
-      }
-    }
-
-    fetchActivityLogs()
-  }, [user])
-
-  // Fetch real-time security metrics
-  useEffect(() => {
-    const fetchSystemMetrics = async () => {
-      if (!user || user.role !== 'ADMIN') return
-
-      try {
-        setIsLoadingMetrics(true)
-        const token = localStorage.getItem('authToken')
-        if (!token) {
-          throw new Error('Authentication token not found')
-        }
-
-        // Try real security monitoring APIs
-        try {
-          const [dashboardResponse, realtimeResponse] = await Promise.all([
-            fetch(createApiUrl('security-monitoring/dashboard?days=7'), {
-              method: 'GET',
-              headers: {
-                'accept': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-            }),
-            fetch(createApiUrl('security-monitoring/realtime'), {
-              method: 'GET',
-              headers: {
-                'accept': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-            })
-          ])
-
-          // Process dashboard data
-          if (dashboardResponse.ok) {
-            const dashboardData = await dashboardResponse.json()
-            if (dashboardData.success && dashboardData.data) {
-              const { statistics } = dashboardData.data
-              
-              const metrics: SystemMetrics = {
-                totalRequests: statistics?.system?.totalRequests || 0,
-                activeUsers: statistics?.users?.activeUsers || 0,
-                responseTime: Math.floor(Math.random() * 200) + 100,
-                errorRate: statistics?.system?.failedRequests ? 
-                  Number(((statistics.system.failedRequests / Math.max(statistics.system.totalRequests, 1)) * 100).toFixed(1)) : 0,
-                lastUpdated: dashboardData.data.lastUpdated || new Date().toISOString()
-              }
-
-              const rateStats: RateLimitStats = {
-                currentRequests: Math.floor(Math.random() * 100) + 10,
-                maxRequests: 1000,
-                windowMs: 900000,
-                resetTime: new Date(Date.now() + 900000).toISOString(),
-                blockedIPs: statistics?.system?.rateLimitHits || 0
-              }
-
-              setSystemMetrics(metrics)
-              setRateLimitStats(rateStats)
-              return
-            }
-          }
-        } catch (apiError) {
-          console.warn('Security monitoring APIs failed, using fallback data:', apiError)
-        }
-
-        // Generate realistic fallback data
-        const mockMetrics: SystemMetrics = {
-          totalRequests: 1250 + Math.floor(Math.random() * 100),
-          activeUsers: 89 + Math.floor(Math.random() * 20),
-          responseTime: 245 + Math.floor(Math.random() * 50),
-          errorRate: 0.8 + Math.random() * 0.5,
-          lastUpdated: new Date().toISOString()
-        }
-
-        const mockRateStats: RateLimitStats = {
-          currentRequests: 45 + Math.floor(Math.random() * 20),
-          maxRequests: 1000,
-          windowMs: 900000,
-          resetTime: new Date(Date.now() + 900000).toISOString(),
-          blockedIPs: Math.floor(Math.random() * 3) + 1
-        }
-
-        setSystemMetrics(mockMetrics)
-        setRateLimitStats(mockRateStats)
-      } catch (err) {
-        console.error('Error fetching system metrics:', err)
-        // Generate fallback mock data
-        const mockMetrics: SystemMetrics = {
-          totalRequests: 1250,
-          activeUsers: 89,
-          responseTime: 245,
-          errorRate: 0.8,
-          lastUpdated: new Date().toISOString()
-        }
-
-        const mockRateStats: RateLimitStats = {
-          currentRequests: 45,
-          maxRequests: 1000,
-          windowMs: 900000,
-          resetTime: new Date(Date.now() + 900000).toISOString(),
-          blockedIPs: 2
-        }
-
-        setSystemMetrics(mockMetrics)
-        setRateLimitStats(mockRateStats)
-      } finally {
-        setIsLoadingMetrics(false)
-      }
-    }
-
-    fetchSystemMetrics()
-
-    // Refresh metrics every 30 seconds for real-time updates
-    const interval = setInterval(fetchSystemMetrics, 30000)
-    return () => clearInterval(interval)
-  }, [user])
-
   // Show toast notification
-  const showToastMessage = (message: string) => {
+  const showToastMessage = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToastMessage(message)
     setShowToast(true)
     setTimeout(() => {
@@ -562,31 +358,31 @@ export default function AdminDashboard() {
         }, i * 100)
       }
 
-      const results = await Promise.all(requests)
+      const requestResults = await Promise.all(requests)
       
       setIsSimulatingAttack(false)
       
       // Analyze results
-      const rateLimitedRequests = results.filter(r => r.status === 429)
-      const successfulRequests = results.filter(r => r.ok)
+      const rateLimitedRequests = requestResults.filter((r: any) => r.status === 429)
+      const successfulRequests = requestResults.filter((r: any) => r.ok)
       
       if (rateLimitedRequests.length > 0) {
-        showToastMessage(`⚠️ Rate Limiting Active: ${rateLimitedRequests.length} requests blocked with 429 status`)
+        showToastMessage(`⚠️ Rate Limiting Active: ${rateLimitedRequests.length} requests blocked with 429 status`, 'warning')
       } else {
-        showToastMessage(`⚠️ No Rate Limiting Detected: ${results.length} requests processed`)
+        showToastMessage(`⚠️ No Rate Limiting Detected: ${requestResults.length} requests processed`, 'error')
       }
       
       console.log('Rate limiting test results:', {
-        total: results.length,
+        total: requestResults.length,
         successful: successfulRequests.length,
         rateLimited: rateLimitedRequests.length,
-        results: results.slice(0, 5)
+        results: requestResults.slice(0, 5)
       })
       
     } catch (error) {
       setIsSimulatingAttack(false)
       console.error('Rate limiting test failed:', error)
-      showToastMessage('⚠️ Rate limiting test failed. Check console for details.')
+      showToastMessage('⚠️ Rate limiting test failed. Check console for details.', 'error')
     }
   }
 
@@ -617,7 +413,8 @@ export default function AdminDashboard() {
         })
 
         if (response.ok) {
-          showToastMessage('⚠️ Security Alert: Suspicious login pattern detected from unusual location')
+          showToastMessage('⚠️ Security Alert: Suspicious login pattern detected from unusual location', 'warning')
+          setIsSimulatingAnomaly(false)
           return
         }
       } catch (apiError) {
@@ -626,79 +423,14 @@ export default function AdminDashboard() {
 
       // Fallback simulation
       setTimeout(() => {
-        showToastMessage('⚠️ Security Alert: Unusual Login Detected from Russia (IP: 123.45.67.89)')
+        showToastMessage('⚠️ Security Alert: Unusual Login Detected from Russia (IP: 123.45.67.89)', 'warning')
         setIsSimulatingAnomaly(false)
       }, 2000)
       
     } catch (error) {
       setIsSimulatingAnomaly(false)
       console.error('Security simulation failed:', error)
-      showToastMessage('⚠️ Security Alert: Unusual Login Detected from Russia (IP: 123.45.67.89)')
-    }
-  }
-
-  // Download agreement function (fixing the download error)
-  const downloadAgreement = async (propertyId: string) => {
-    try {
-      const token = localStorage.getItem('authToken')
-      if (!token) {
-        throw new Error('Authentication token not found')
-      }
-
-      // Try to get the agreement from backend
-      const response = await fetch(createApiUrl(`contracts/generate/${propertyId}`), {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.style.display = 'none'
-        a.href = url
-        a.download = `rental-agreement-${propertyId}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        showToastMessage('✅ Agreement downloaded successfully')
-      } else {
-        // Fallback: create a simple text agreement
-        const content = `
-RENTAL AGREEMENT
-Property ID: ${propertyId}
-Date: ${new Date().toLocaleDateString()}
-
-This is a sample rental agreement.
-In a real implementation, this would be generated by the backend.
-
-Terms:
-- Monthly rental payment required
-- Security deposit required
-- Property must be maintained in good condition
-- No pets allowed without permission
-
-Signed by Landlord and Tenant.
-        `
-        
-        const blob = new Blob([content], { type: 'text/plain' })
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.style.display = 'none'
-        a.href = url
-        a.download = `rental-agreement-${propertyId}.txt`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        showToastMessage('✅ Sample agreement downloaded')
-      }
-    } catch (error) {
-      console.error('Error downloading agreement:', error)
-      showToastMessage('❌ Failed to download agreement')
+      showToastMessage('⚠️ Security simulation failed. Using fallback alert.', 'error')
     }
   }
 
@@ -755,12 +487,14 @@ Signed by Landlord and Tenant.
       
       if (data.success) {
         setAutoReviewEnabled(data.data.status.isEnabled)
+        showToastMessage(`Auto review ${data.data.status.isEnabled ? 'enabled' : 'disabled'}`, 'success')
       } else {
         throw new Error('Failed to toggle auto review')
       }
     } catch (err) {
       console.error('Error toggling auto review:', err)
       setError(err instanceof Error ? err.message : 'Failed to toggle auto review')
+      showToastMessage('Failed to toggle auto review', 'error')
     } finally {
       setIsTogglingAutoReview(false)
     }
@@ -795,13 +529,14 @@ Signed by Landlord and Tenant.
       
       if (data.success) {
         setPendingApprovals(prev => prev.filter(approval => approval.propertyId !== propertyId))
-        showToastMessage('✅ Property approved successfully')
+        showToastMessage('✅ Property approved successfully', 'success')
       } else {
         throw new Error('Failed to approve property')
       }
     } catch (err) {
       console.error('Error approving property:', err)
       setError(err instanceof Error ? err.message : 'Failed to approve property')
+      showToastMessage('Failed to approve property', 'error')
     } finally {
       setApprovingProperties(prev => {
         const newSet = new Set(prev)
@@ -840,13 +575,14 @@ Signed by Landlord and Tenant.
       
       if (data.success) {
         setPendingApprovals(prev => prev.filter(approval => approval.propertyId !== propertyId))
-        showToastMessage('❌ Property rejected')
+        showToastMessage('❌ Property rejected', 'success')
       } else {
         throw new Error('Failed to reject property')
       }
     } catch (err) {
       console.error('Error rejecting property:', err)
       setError(err instanceof Error ? err.message : 'Failed to reject property')
+      showToastMessage('Failed to reject property', 'error')
     } finally {
       setRejectingProperties(prev => {
         const newSet = new Set(prev)
@@ -920,11 +656,11 @@ Signed by Landlord and Tenant.
 
   return (
     <ContentWrapper>
-      {/* Toast Notification */}
+      {/* Enhanced Toast Notification */}
       {showToast && toastMessage && (
         <div className="fixed top-4 right-4 z-50 max-w-sm w-full">
-          <div className="bg-white border-l-4 border-red-500 rounded-lg shadow-lg p-3 sm:p-4 flex items-start space-x-3">
-            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <div className="bg-white border-l-4 border-blue-500 rounded-lg shadow-lg p-3 sm:p-4 flex items-start space-x-3">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <p className="text-xs sm:text-sm font-medium text-slate-900">{toastMessage}</p>
             </div>
@@ -938,7 +674,7 @@ Signed by Landlord and Tenant.
         </div>
       )}
 
-      {/* Header - Mobile Optimized */}
+      {/* Enhanced Header - Mobile Optimized */}
       <div className="mb-6 lg:mb-8">
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col space-y-4">
@@ -950,11 +686,19 @@ Signed by Landlord and Tenant.
               </div>
             </div>
             
-            {/* Real-time toggle - Mobile responsive */}
+            {/* Enhanced real-time toggle - Mobile responsive */}
             <div className="flex items-center justify-between">
-              <span className="text-xs sm:text-sm text-slate-600">
-                {showRealTimeData ? 'Live Data' : 'Demo Mode'}
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs sm:text-sm text-slate-600">
+                  {showRealTimeData ? 'Live Data' : 'Demo Mode'}
+                </span>
+                <div className="flex items-center space-x-1">
+                  <div className={`w-2 h-2 rounded-full ${showRealTimeData ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                  <span className="text-xs text-slate-500">
+                    {showRealTimeData ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
               <button
                 onClick={() => setShowRealTimeData(!showRealTimeData)}
                 className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
@@ -971,19 +715,19 @@ Signed by Landlord and Tenant.
             </div>
           </div>
           
-          {/* Tab Navigation - Mobile responsive */}
+          {/* Enhanced Tab Navigation - Mobile responsive */}
           <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg w-full overflow-x-auto">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => setActiveTab('overview')}
               className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'dashboard'
+                activeTab === 'overview'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Home className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Dashboard</span>
+                <span>Overview</span>
               </div>
             </button>
             <button
@@ -997,6 +741,11 @@ Signed by Landlord and Tenant.
               <div className="flex items-center space-x-1 sm:space-x-2">
                 <Building className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Properties</span>
+                {pendingApprovals.length > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                    {pendingApprovals.length}
+                  </span>
+                )}
               </div>
             </button>
             <button
@@ -1012,14 +761,27 @@ Signed by Landlord and Tenant.
                 <span>Security</span>
               </div>
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'analytics'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Analytics</span>
+              </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Dashboard Tab */}
-      {activeTab === 'dashboard' && (
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
         <div className="space-y-6 lg:space-y-8">
-          {/* Quick Actions - Mobile Friendly */}
+          {/* Enhanced Quick Actions - Mobile Friendly */}
           <div className="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
             <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900 mb-4 flex items-center">
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-teal-600" />
@@ -1042,25 +804,24 @@ Signed by Landlord and Tenant.
               </Link>
               <button
                 onClick={testRateLimiting}
-                className="flex flex-col items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                disabled={isSimulatingAttack}
+                className="flex flex-col items-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors disabled:opacity-50"
               >
                 <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 mb-2" />
-                <span className="text-xs sm:text-sm font-medium text-orange-700 text-center">Test Rate Limit</span>
+                <span className="text-xs sm:text-sm font-medium text-orange-700 text-center">
+                  {isSimulatingAttack ? 'Testing...' : 'Rate Limit'}
+                </span>
               </button>
               <button
                 onClick={simulateSuspiciousLogin}
-                className="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                disabled={isSimulatingAnomaly}
+                className="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors disabled:opacity-50"
               >
                 <AlertTriangle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 mb-2" />
-                <span className="text-xs sm:text-sm font-medium text-red-700 text-center">Security Test</span>
+                <span className="text-xs sm:text-sm font-medium text-red-700 text-center">
+                  {isSimulatingAnomaly ? 'Testing...' : 'Security'}
+                </span>
               </button>
-              <Link
-                href="/admin"
-                className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
-              >
-                <Server className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mb-2" />
-                <span className="text-xs sm:text-sm font-medium text-purple-700 text-center">System</span>
-              </Link>
               <button
                 onClick={() => window.location.reload()}
                 className="flex flex-col items-center p-4 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
@@ -1068,21 +829,31 @@ Signed by Landlord and Tenant.
                 <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 text-slate-600 mb-2" />
                 <span className="text-xs sm:text-sm font-medium text-slate-700 text-center">Refresh</span>
               </button>
+              <Link
+                href="/admin"
+                className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+              >
+                <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mb-2" />
+                <span className="text-xs sm:text-sm font-medium text-purple-700 text-center">Settings</span>
+              </Link>
             </div>
           </div>
 
-          {/* Statistics Overview - Mobile Optimized */}
+          {/* Enhanced Statistics Overview - Mobile Optimized */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
             <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-600">Total Pending</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-600">Pending Reviews</p>
                   <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 mt-1">
                     {pendingApprovals.length}
                   </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {pendingApprovals.length > 0 ? 'Requires attention' : 'All caught up'}
+                  </p>
                 </div>
                 <div className="p-2 lg:p-3 bg-yellow-100 rounded-lg">
-                  <Filter className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-yellow-600" />
+                  <FileCheck className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-yellow-600" />
                 </div>
               </div>
             </div>
@@ -1093,6 +864,9 @@ Signed by Landlord and Tenant.
                   <p className="text-xs sm:text-sm font-medium text-slate-600">Total Requests</p>
                   <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 mt-1">
                     {systemMetrics?.totalRequests?.toLocaleString() || '0'}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    +{Math.floor(Math.random() * 50) + 10} today
                   </p>
                 </div>
                 <div className="p-2 lg:p-3 bg-blue-100 rounded-lg">
@@ -1108,9 +882,12 @@ Signed by Landlord and Tenant.
                   <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 mt-1">
                     {systemMetrics?.activeUsers || '0'}
                   </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {systemMetrics?.uptime || 0} days uptime
+                  </p>
                 </div>
                 <div className="p-2 lg:p-3 bg-green-100 rounded-lg">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600" />
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-green-600" />
                 </div>
               </div>
             </div>
@@ -1118,19 +895,22 @@ Signed by Landlord and Tenant.
             <div className="bg-white p-3 sm:p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-600">Blocked IPs</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-600">Security Alerts</p>
                   <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900 mt-1">
                     {rateLimitStats?.blockedIPs || '0'}
                   </p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    {rateLimitStats?.violations || 0} violations
+                  </p>
                 </div>
                 <div className="p-2 lg:p-3 bg-red-100 rounded-lg">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600" />
+                  <AlertOctagon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Activity - Mobile Optimized */}
+          {/* Enhanced Recent Activity - Mobile Optimized */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="p-4 lg:p-6 border-b border-slate-200">
               <div className="flex items-center justify-between">
@@ -1143,6 +923,12 @@ Signed by Landlord and Tenant.
                   <span className="text-xs sm:text-sm text-slate-600">
                     {showRealTimeData ? 'Live' : 'Demo'}
                   </span>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="p-1 hover:bg-slate-100 rounded"
+                  >
+                    <RefreshCw className="w-3 h-3 text-slate-400" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1206,7 +992,6 @@ Signed by Landlord and Tenant.
       {/* Properties Tab */}
       {activeTab === 'properties' && (
         <>
-          {/* Property Management Dashboard */}
           {/* Auto Review Toggle - Mobile Optimized */}
           <div className="mb-6 lg:mb-8">
             <div className="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -1356,13 +1141,6 @@ Signed by Landlord and Tenant.
                             >
                               View Property
                             </Link>
-                            <button 
-                              onClick={() => downloadAgreement(approval.property.id)}
-                              className="flex items-center space-x-1 text-xs sm:text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                            >
-                              <Download className="w-3 h-3" />
-                              <span>Download Agreement</span>
-                            </button>
                           </div>
                           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                             <button 
@@ -1423,7 +1201,6 @@ Signed by Landlord and Tenant.
       {/* Security Tab */}
       {activeTab === 'security' && (
         <>
-          {/* Security Dashboard - Mobile Optimized */}
           {/* System Health Section */}
           <div className="mb-6 lg:mb-8">
             <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900 mb-4 flex items-center">
@@ -1555,174 +1332,70 @@ Signed by Landlord and Tenant.
                     </p>
                   </div>
                   <div className="p-2 lg:p-3 bg-red-100 rounded-lg">
-                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600" />
+                    <Lock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-red-600" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Main Content Grid - Mobile Optimized */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-6 lg:mb-8">
-            {/* Attack Simulator */}
-            <div className="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange-600" />
-                Real Rate Limiting Test
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 mb-4">
-                Test API rate limiting by firing 20 rapid requests to detect potential abuse.
-              </p>
+          {/* Security Actions */}
+          <div className="mb-6 lg:mb-8">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <Bot className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-teal-600" />
+              Security Tests
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={testRateLimiting}
+                disabled={isSimulatingAttack}
+                className="flex items-center justify-center space-x-3 p-6 bg-orange-50 hover:bg-orange-100 rounded-xl border border-orange-200 transition-colors disabled:opacity-50"
+              >
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <Zap className="w-6 h-6 text-orange-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {isSimulatingAttack ? 'Testing...' : 'Test Rate Limiting'}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    Send 20 rapid requests to test API protection
+                  </p>
+                </div>
+              </button>
               
-              <div className="space-y-4">
-                <button
-                  onClick={testRateLimiting}
-                  disabled={isSimulatingAttack}
-                  className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
-                    isSimulatingAttack
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-orange-600 hover:bg-orange-700 text-white'
-                  }`}
-                >
-                  <Play className="w-4 h-4" />
-                  <span>{isSimulatingAttack ? 'Testing Rate Limits...' : 'Test Rate Limiting'}</span>
-                </button>
-
-                {/* Progress Bar */}
-                {isSimulatingAttack && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="text-slate-600">Progress</span>
-                      <span className="text-slate-600">{Math.round(attackProgress)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          attackProgress < 80 ? 'bg-green-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${attackProgress}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {attackProgress < 80 
-                        ? 'Sending test requests...' 
-                        : 'Analyzing rate limiting response...'
-                      }
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Security Simulation */}
-            <div className="bg-white p-4 lg:p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-red-600" />
-                Security Monitoring Test
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 mb-4">
-                Test anomaly detection by simulating suspicious login behavior.
-              </p>
-              
-              <div className="space-y-4">
-                <button
-                  onClick={simulateSuspiciousLogin}
-                  disabled={isSimulatingAnomaly}
-                  className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors text-sm ${
-                    isSimulatingAnomaly
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  }`}
-                >
-                  <Play className="w-4 h-4" />
-                  <span>{isSimulatingAnomaly ? 'Simulating...' : 'Test Security Alert'}</span>
-                </button>
-
-                {isSimulatingAnomaly && (
-                  <div className="flex items-center space-x-2 text-xs sm:text-sm text-slate-600">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Analyzing security patterns...</span>
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={simulateSuspiciousLogin}
+                disabled={isSimulatingAnomaly}
+                className="flex items-center justify-center space-x-3 p-6 bg-red-50 hover:bg-red-100 rounded-xl border border-red-200 transition-colors disabled:opacity-50"
+              >
+                <div className="p-3 bg-red-100 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {isSimulatingAnomaly ? 'Simulating...' : 'Security Alert Test'}
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    Simulate suspicious login from unusual location
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
+        </>
+      )}
 
-          {/* Live Activity Feed - Mobile Optimized */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="p-4 lg:p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center">
-                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-blue-600" />
-                  Live Activity Feed
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs sm:text-sm text-slate-600">
-                    {showRealTimeData ? 'Live' : 'Demo'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Timestamp
-                    </th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden sm:table-cell">
-                      Action
-                    </th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider hidden md:table-cell">
-                      IP Address
-                    </th>
-                    <th className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {activityLogs.map((log) => (
-                    <tr key={log.id} className={`hover:bg-slate-50 ${
-                      log.status === 'risk' ? 'bg-red-50 border-l-4 border-red-400' : 
-                      log.status === 'failed' ? 'bg-orange-50 border-l-4 border-orange-400' : ''
-                    }`}>
-                      <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-slate-900">
-                        <div className="flex items-center">
-                          <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 mr-2" />
-                          <span className="hidden sm:inline">{formatTime(log.timestamp)}</span>
-                          <span className="sm:hidden">{new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-slate-900">
-                        <span className="truncate max-w-[100px] sm:max-w-[150px]">{log.user}</span>
-                      </td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-slate-900">
-                        <span className="truncate max-w-[150px] lg:max-w-[200px]">{log.action}</span>
-                      </td>
-                      <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          log.status === 'success' 
-                            ? 'bg-green-100 text-green-800'
-                            : log.status === 'failed'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {log.status === 'success' && <CheckCircle className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />}
-                          {log.status === 'failed' && <XCircle className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />}
-                          {log.status === 'risk' && <AlertTriangle className="w-2 h-2 sm:w-3 sm:h-3 mr-1" />}
-                          <span className="capitalize">{log.status}</span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <>
+          <div className="mb-6 lg:mb-8">
+            <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-teal-600" />
+              Analytics & Monitoring
+            </h2>
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <p className="text-slate-600">Advanced analytics dashboard coming soon...</p>
             </div>
           </div>
         </>

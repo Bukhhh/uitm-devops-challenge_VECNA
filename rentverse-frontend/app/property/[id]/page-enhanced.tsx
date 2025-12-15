@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/router'
-// import Image from 'next/image' // Commented out due to module resolution issues
+import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import ContentWrapper from '@/components/ContentWrapper'
 import BarProperty from '@/components/BarProperty'
 import ImageGallery from '@/components/ImageGallery'
@@ -84,8 +84,8 @@ const getPropertyHighlights = (property: Property) => {
 }
 
 function DetailPage() {
-  const router = useRouter()
-  const propertyId = router.query.id as string
+  const params = useParams()
+  const propertyId = params.id as string
   const [property, setProperty] = useState<Property | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

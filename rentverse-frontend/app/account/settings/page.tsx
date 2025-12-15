@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Settings, Bell, Shield, Moon, Sun, Globe, Key, Eye, EyeOff } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import { userSettingsApiClient, UserSettings, UserSettingsInput } from '@/utils/userSettingsApiClient'
+import NavBarBottom from '@/components/NavBarBottom'
 
 function AccountSettingsPage() {
   const [darkMode, setDarkMode] = useState(false)
@@ -130,7 +131,7 @@ function AccountSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
+    <div className="max-w-4xl mx-auto py-8 pb-20">
       {/* Header */}
       <div className="mb-8">
         <Link
@@ -372,6 +373,9 @@ function AccountSettingsPage() {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Navigation */}
+      <NavBarBottom />
     </div>
   )
 }
