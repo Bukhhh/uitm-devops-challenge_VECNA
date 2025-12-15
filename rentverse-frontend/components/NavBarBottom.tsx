@@ -128,7 +128,7 @@ function NavBarBottom() {
               </span>
             </Link>
           )}
-          {isDropdownOpen && <UserDropdown isOpen={isDropdownOpen} onClose={closeDropdown} className="bottom-full right-0 mb-2" />}
+          {isDropdownOpen && <UserDropdown isOpen={isDropdownOpen} onClose={closeDropdown} position="bottom" />}
         </li>
       </ul>
     </nav>

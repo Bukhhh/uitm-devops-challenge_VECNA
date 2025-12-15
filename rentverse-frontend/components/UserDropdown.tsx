@@ -11,9 +11,10 @@ interface UserDropdownProps {
   isOpen: boolean
   onClose: () => void
   className?: string
+  position?: 'top' | 'bottom'
 }
 
-function UserDropdown({ isOpen, onClose, className }: Readonly<UserDropdownProps>): React.ReactNode {
+function UserDropdown({ isOpen, onClose, className, position = 'top' }: Readonly<UserDropdownProps>): React.ReactNode {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { user } = useCurrentUser()
   const { logout } = useAuthStore()
@@ -93,8 +94,9 @@ function UserDropdown({ isOpen, onClose, className }: Readonly<UserDropdownProps
     <div
       ref={dropdownRef}
       className={clsx([
-        'absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl',
+        'absolute right-0 w-72 sm:w-80 bg-white rounded-xl shadow-xl',
         'border border-slate-200 py-2 z-50',
+        position === 'top' ? 'top-full mt-2' : 'bottom-full mb-2',
         className
       ])}
     >
