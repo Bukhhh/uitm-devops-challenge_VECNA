@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import CardProperty from '@/components/CardProperty'
+import CardPropertyFeatured from '@/components/CardPropertyFeatured'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { FreeMode } from 'swiper/modules'
 import usePropertiesStore from '@/stores/propertiesStore'
@@ -78,7 +78,7 @@ function ListFeatured() {
       >
         {properties.map((property) => (
           <SwiperSlide key={property.id}>
-            <CardProperty property={property} />
+            <CardPropertyFeatured property={property} />
           </SwiperSlide>
         ))}
       </Swiper>
