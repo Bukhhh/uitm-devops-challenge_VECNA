@@ -94,7 +94,10 @@ export async function uploadProperty(
 ): Promise<PropertyUploadResponse> {
   try {
     // Debug: Log the request data
-    console.log('Uploading property data:', JSON.stringify(propertyData, null, 2))
+    console.log('📤 PROPERTY UPLOAD DEBUG:')
+    console.log('Images in request:', propertyData.images)
+    console.log('Images count:', propertyData.images?.length || 0)
+    console.log('Full property data:', JSON.stringify(propertyData, null, 2))
 
     const response = await fetch(createApiUrl('properties'), {
       method: 'POST',
@@ -178,7 +181,7 @@ export function mapPropertyListingToUploadRequest(data: PropertyListingData): Mi
   if (images.length === 0) {
     console.warn('No images found in property data - property will be uploaded without images')
   } else {
-    console.log(`Preparing property upload with ${images.length} images:`, images)
+    console.log(`📸 Preparing property upload with ${images.length} images:`, images)
   }
 
   // Create a minimal payload with only essential fields
@@ -204,8 +207,8 @@ export function mapPropertyListingToUploadRequest(data: PropertyListingData): Mi
     amenityIds: []
   }
 
-  console.log('Property data with dynamic propertyTypeId and images:', JSON.stringify(payload, null, 2))
-  console.log('Images included:', payload.images.length, 'URLs')
+  console.log('📊 Property data with dynamic propertyTypeId and images:', JSON.stringify(payload, null, 2))
+  console.log('📸 Images included:', payload.images.length, 'URLs')
   return payload
 }
 
@@ -226,7 +229,7 @@ function getDefaultPropertyTypeId(propertyType?: string): string {
   }
 
   const selectedId = fallbackMap[propertyType || ''] || '1' // Default to Apartment ID
-  console.log(`Using propertyTypeId "${selectedId}" for property type "${propertyType}"`)
+  console.log(`🏢 Using propertyTypeId "${selectedId}" for property type "${propertyType}"`)
   return selectedId
 }
 
@@ -254,7 +257,7 @@ export async function mapPropertyListingToUploadRequestWithDynamicTypes(
 
         if (matchingType) {
           propertyTypeId = matchingType.id
-          console.log(`Found dynamic propertyTypeId: ${propertyTypeId} for ${data.propertyType}`)
+          console.log(`🏢 Found dynamic propertyTypeId: ${propertyTypeId} for ${data.propertyType}`)
         }
       }
     } catch (error) {
@@ -273,7 +276,7 @@ export async function mapPropertyListingToUploadRequestWithDynamicTypes(
   if (images.length === 0) {
     console.warn('No images found in property data - property will be uploaded without images')
   } else {
-    console.log(`Preparing enhanced property upload with ${images.length} images:`, images)
+    console.log(`📸 Preparing enhanced property upload with ${images.length} images:`, images)
   }
 
   return {

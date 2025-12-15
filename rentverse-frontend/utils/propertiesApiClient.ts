@@ -67,6 +67,14 @@ export class PropertiesApiClient {
         area: backendProperty.area || backendProperty.areaSqm || 0,
       }
 
+      // 🔍 DEBUG: Log the images field to identify the issue
+      console.log('🔍 Property API Debug:')
+      console.log('Property ID:', propertyId)
+      console.log('Backend images field:', backendProperty.images)
+      console.log('Mapped property images:', propertyData.images)
+      console.log('Images count:', propertyData.images?.length || 0)
+      console.log('Full backend property data:', JSON.stringify(backendProperty, null, 2))
+
       return propertyData
     } catch (error) {
       console.error('Get property API error:', error)

@@ -204,8 +204,8 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       currentStep: 0,
       data: initialData,
       steps: initialSteps,
-      isLoading: false,
-      isDirty: false,
+      isLoading: false as boolean,
+      isDirty: false as boolean,
 
       setCurrentStep: (step: number) => {
         const { steps } = get()
@@ -215,10 +215,21 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
       },
 
       updateData: (updates: Partial<PropertyListingData>) => {
-        set((state: any) => ({
-          data: { ...state.data, ...updates },
-          isDirty: true,
-        }))
+        // 🔍 ENHANCED DEBUGGING: Log all data updates
+        console.log('📝 Store updateData called with:', updates)
+        if (updates.images) {
+          console.log('📸 Images being updated:', updates.images)
+          console.log('📸 Images count:', updates.images.length)
+        }
+        
+        set((state: any) => {
+          const newData = { ...state.data, ...updates }
+          console.log('📝 New store data:', JSON.stringify(newData, null, 2))
+          return {
+            data: newData,
+            isDirty: true,
+          }
+        })
       },
 
       nextStep: () => {
@@ -426,12 +437,20 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
             console.warn('No propertyTypeId found, using fallback mapping')
           }
           
-          // Log images status
-          if (data.images && data.images.length > 0) {
-            console.log(`Property has ${data.images.length} images ready for upload:`, data.images)
-          } else {
-            console.warn('No images found in property data - property will be created without images')
-          }
+          // 🔍 CRITICAL DEBUG: Check images at the moment of submission
+          console.log('🚨 FINAL SUBMISSION DEBUG:')
+          console.log('Original store data images:', data.images)
+          console.log('Original images count:', data.images?.length || 0)
+          console.log('Store data full:', JSON.stringify(data, null, 2))
+          
+          // Map property data to upload format (now includes dynamic propertyTypeId)
+          const uploadData = mapPropertyListingToUploadRequest(data)
+          
+          console.log('🚨 MAPPED UPLOAD DATA DEBUG:')
+          console.log('Mapped upload data images:', uploadData.images)
+          console.log('Mapped images count:', uploadData.images?.length || 0)
+          console.log('Property submission data:', JSON.stringify(uploadData, null, 2))
+          console.log('Submitting property with propertyTypeId:', uploadData.propertyTypeId)
           
           // Check multiple ways to get auth token
           let token = null
@@ -462,11 +481,6 @@ export const usePropertyListingStore = create<PropertyListingStore>()(
             }
             return
           }
-          
-          // Map property data to upload format (now includes dynamic propertyTypeId)
-          const uploadData = mapPropertyListingToUploadRequest(data)
-          
-          console.log('Submitting property with propertyTypeId:', uploadData.propertyTypeId)
           
           // Upload property to backend
           await uploadProperty(uploadData, token)
