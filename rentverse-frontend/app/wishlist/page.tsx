@@ -56,23 +56,25 @@ function WishlistPage() {
   return (
     <ContentWrapper>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="space-y-4 mb-8">
         <h3 className="text-2xl font-sans font-medium text-slate-900">My Wishlist</h3>
-        <div className="flex items-center space-x-3">
+        
+        {/* Mobile-first button layout */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            className="flex items-center space-x-2 px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center space-x-2 w-full sm:w-auto px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
-            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-            <span className="text-sm font-medium">Refresh</span>
+            <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+            <span className="font-semibold">Refresh</span>
           </button>
           <Link
             href="/property"
-            className="flex items-center space-x-2 px-4 py-2 text-slate-600 hover:text-slate-900 transition-colors"
+            className="flex items-center justify-center space-x-2 w-full sm:w-auto px-6 py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors shadow-sm font-semibold"
           >
-            <Search size={16} />
-            <span className="text-sm font-medium">Browse Properties</span>
+            <Search size={20} />
+            <span>Browse Properties</span>
           </Link>
         </div>
       </div>
