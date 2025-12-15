@@ -46,7 +46,7 @@ function AddListingStepTwoDescription() {
   }, [])
 
   return (
-    <div className="max-w-6xl w-full mx-auto space-y-6 mt-10">
+    <div className="max-w-6xl w-full mx-auto space-y-6 mt-10 px-8">
       <div className="space-y-3">
         <h2 className="text-2xl font-serif text-slate-900">
           Create your description

@@ -104,7 +104,7 @@ function NavBarTop({ searchBoxType = 'none', isQuestionnaire = false }: Readonly
           </nav>)}
         {isQuestionnaire && <ButtonSecondary label="Exit" onClick={handleExit} />}
       </div>
-      {(searchBoxType === 'full' && !isQuestionnaire) && <SearchBoxProperty className="hidden lg:block" />}
+      {(searchBoxType === 'full' && !isQuestionnaire) && <SearchBoxProperty />}
     </div>
   )
 }

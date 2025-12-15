@@ -18,10 +18,7 @@ function ListsPage() {
   return (
     <ContentWrapper searchBoxType="full">
       <div className="space-y-8">
-        {/* Search Box - always visible */}
-        <div className="max-w-4xl mx-auto">
-          <SearchBoxProperty />
-        </div>
+        {/* Search Box is now in the header */}
 
         {/* Search Results Section */}
         <div className="space-y-8">

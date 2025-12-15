@@ -5,6 +5,9 @@ import { Search, Heart, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 import useAuthStore from '@/stores/authStore'
+import useCurrentUser from '@/hooks/useCurrentUser'
+import Avatar from '@/components/Avatar'
+import UserDropdown from '@/components/UserDropdown'
 
 type NavItem = 'explore' | 'wishlists' | 'login'
 
@@ -12,6 +15,11 @@ function NavBarBottom() {
   const [activeTab, setActiveTab] = useState<NavItem>('explore')
   const [isMounted, setIsMounted] = useState(false)
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const { user } = useCurrentUser()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen)
+  const closeDropdown = () => setIsDropdownOpen(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -78,30 +86,49 @@ function NavBarBottom() {
             </span>
           </Link>
         </li>
-        <li>
-          <Link
-            href={isLoggedIn ? '/rents' : '/auth/login'}
-            onClick={() => handleTabClick('login')}
-            className="flex flex-col items-center space-y-1 group"
-          >
-            <User
-              size={24}
-              className={`transition-colors duration-200 ${
-                activeTab === 'login'
-                  ? 'text-teal-600'
-                  : 'text-slate-400 group-hover:text-slate-600'
-              }`}
-            />
-            <span
-              className={`text-xs font-medium transition-colors duration-200 ${
-                activeTab === 'login'
-                  ? 'text-teal-600'
-                  : 'text-slate-400 group-hover:text-slate-600'
-              }`}
+        <li className="relative">
+          {isMounted && isLoggedIn && user ? (
+            <div
+              onClick={toggleDropdown}
+              className="flex flex-col items-center space-y-1 group cursor-pointer"
             >
-              {isLoggedIn ? 'Profile' : 'Log in'}
-            </span>
-          </Link>
+              <Avatar user={user} className="w-6 h-6" />
+              <span
+                className={`text-xs font-medium transition-colors duration-200 ${
+                  isDropdownOpen
+                    ? 'text-teal-600'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                }`}
+              >
+                Settings
+              </span>
+            </div>
+          ) : (
+            <Link
+              href="/auth/login"
+              onClick={() => handleTabClick('login')}
+              className="flex flex-col items-center space-y-1 group"
+            >
+              <User
+                size={24}
+                className={`transition-colors duration-200 ${
+                  activeTab === 'login'
+                    ? 'text-teal-600'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                }`}
+              />
+              <span
+                className={`text-xs font-medium transition-colors duration-200 ${
+                  activeTab === 'login'
+                    ? 'text-teal-600'
+                    : 'text-slate-400 group-hover:text-slate-600'
+                }`}
+              >
+                Log in
+              </span>
+            </Link>
+          )}
+          {isDropdownOpen && <UserDropdown isOpen={isDropdownOpen} onClose={closeDropdown} className="bottom-full right-0 mb-2" />}
         </li>
       </ul>
     </nav>
