@@ -79,46 +79,52 @@ function BarProperty(props: Readonly<BarPropertyProps>) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto flex items-center justify-between p-4 bg-white border-b border-gray-100">
+    <div className="w-full max-w-7xl mx-auto flex items-center justify-between p-3 sm:p-4 bg-white border-b border-gray-100">
       {/* Left side - Back button and title */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
         <ButtonCircle icon={<ArrowLeft />} onClick={handleBackButton} />
-        <h1 className="text-lg font-semibold text-gray-900">
+        <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
           {props.title}
         </h1>
       </div>
 
-      {/* Right side - Share and Favourites buttons */}
-      <div className="flex items-center space-x-4">
+      {/* Right side - Share and Favourites buttons - Mobile friendly */}
+      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+        {/* Share Button - Mobile optimized */}
         <button 
           onClick={handleShare}
           className={clsx([
-            'flex items-center space-x-2 text-gray-600 cursor-pointer',
-            'hover:underline hover:text-gray-900 transition-colors',
+            'flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2',
+            'bg-slate-100 hover:bg-slate-200 rounded-full sm:rounded-lg',
+            'text-slate-600 hover:text-slate-900 transition-all duration-200',
+            'shadow-sm hover:shadow-md'
           ])}
         >
-          <Share size={14} />
-          <span className="text-sm font-medium">Share</span>
+          <Share size={18} className="sm:mr-2" />
+          <span className="hidden sm:inline text-sm font-medium">Share</span>
         </button>
+        
+        {/* Favorites Button - Mobile optimized */}
         <button 
           onClick={handleFavoriteToggle}
           disabled={isToggling || !props.propertyId}
           className={clsx([
-            'flex items-center space-x-2 cursor-pointer transition-colors',
-            'hover:underline disabled:opacity-50 disabled:cursor-not-allowed',
+            'flex items-center justify-center w-10 h-10 sm:w-auto sm:h-auto sm:px-3 sm:py-2',
+            'rounded-full sm:rounded-lg transition-all duration-200',
+            'shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed',
             isFavorited 
-              ? 'text-red-600 hover:text-red-700' 
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-red-100 hover:bg-red-200 text-red-600' 
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900'
           ])}
         >
           <Heart 
-            size={14} 
-            className={isFavorited ? 'fill-current' : ''} 
+            size={18} 
+            className={clsx('sm:mr-2', isFavorited ? 'fill-current' : '')} 
           />
-          <span className="text-sm font-medium">
+          <span className="hidden sm:inline text-sm font-medium">
             {(() => {
               if (isToggling) return 'Updating...'
-              return isFavorited ? 'Remove from Favourites' : 'Add to Favourites'
+              return isFavorited ? 'Remove' : 'Save'
             })()}
           </span>
         </button>

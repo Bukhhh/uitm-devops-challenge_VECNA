@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
-import { User, Settings, Home, Heart, Search, LogOut, Calendar, Shield } from 'lucide-react'
+import { User, Settings, Home, Heart, Search, LogOut, Calendar, Shield, Building, MapPin } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import useCurrentUser from '@/hooks/useCurrentUser'
 
@@ -93,8 +93,8 @@ function UserDropdown({ isOpen, onClose, className }: Readonly<UserDropdownProps
     <div
       ref={dropdownRef}
       className={clsx([
-        'absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg',
-        'border border-slate-200 py-3 z-50',
+        'absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-xl',
+        'border border-slate-200 py-2 z-50',
         className
       ])}
     >
@@ -125,98 +125,101 @@ function UserDropdown({ isOpen, onClose, className }: Readonly<UserDropdownProps
         </div>
       </div>
 
-      {/* Menu Items */}
-      <div className="py-2">
-        {/* Customer Mode */}
-        <div className="px-4 py-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer Mode</p>
+      {/* Quick Access Modes - More Prominent */}
+      <div className="px-2 py-3">
+        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 mb-2">Quick Access</h4>
+        <div className="grid grid-cols-1 gap-1">
+          {/* Profile/Account - Most Prominent */}
+          <Link
+            href="/account"
+            onClick={onClose}
+            className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg"
+          >
+            <User size={18} className="mr-3 text-teal-500" />
+            <span className="font-medium">My Profile</span>
+          </Link>
+          
+          {/* All Properties */}
+          <Link
+            href="/property"
+            onClick={onClose}
+            className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg"
+          >
+            <Search size={18} className="mr-3 text-blue-500" />
+            <span className="font-medium">Browse Properties</span>
+          </Link>
+          
+          {/* My Properties */}
+          <Link
+            href="/property/all"
+            onClick={onClose}
+            className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg"
+          >
+            <Building size={18} className="mr-3 text-orange-500" />
+            <span className="font-medium">My Properties</span>
+          </Link>
         </div>
-        
-        <Link
-          href="/property"
-          onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
-        >
-          <Search size={18} className="mr-3 text-slate-400" />
-          <span className="font-medium">Search Property</span>
-        </Link>
+      </div>
+
+      {/* Customer Mode */}
+      <div className="px-2">
+        <div className="px-2 py-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer Services</p>
+        </div>
         
         <Link
           href="/rents"
           onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
+          className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg mx-2"
         >
-          <Calendar size={18} className="mr-3 text-slate-400" />
-          <span className="font-medium">My rents</span>
+          <Calendar size={18} className="mr-3 text-green-500" />
+          <span className="font-medium">My Rentals</span>
         </Link>
         
         <Link
           href="/wishlist"
           onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
+          className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg mx-2"
         >
-          <Heart size={18} className="mr-3 text-slate-400" />
-          <span className="font-medium">My wishlists</span>
+          <Heart size={18} className="mr-3 text-red-500" />
+          <span className="font-medium">My Wishlists</span>
         </Link>
+      </div>
 
-        {/* Separator */}
-        <div className="border-t border-slate-100 my-2"></div>
-
-        {/* Seller Mode */}
-        <div className="px-4 py-2">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seller Mode</p>
-        </div>
-        
-        <Link
-          href="/property/all"
-          onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
-        >
-          <Home size={18} className="mr-3 text-slate-400" />
-          <span className="font-medium">My listings</span>
-        </Link>
-
-        {/* Admin Portal - Only show for admin users */}
-        {user?.role === 'ADMIN' && (
-          <>
-            {/* Separator */}
-            <div className="border-t border-slate-100 my-2"></div>
-
-            {/* Admin Mode */}
-            <div className="px-4 py-2">
+      {/* Admin Portal - Only show for admin users */}
+      {user?.role === 'ADMIN' && (
+        <>
+          <div className="border-t border-slate-100 my-2"></div>
+          <div className="px-2">
+            <div className="px-2 py-2">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin Portal</p>
             </div>
             
             <Link
               href="/admin"
               onClick={onClose}
-              className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
+              className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg mx-2"
             >
-              <Shield size={18} className="mr-3 text-slate-400" />
+              <Shield size={18} className="mr-3 text-purple-500" />
               <span className="font-medium">Admin Dashboard</span>
             </Link>
-          </>
-        )}
+          </div>
+        </>
+      )}
 
-        {/* Separator */}
-        <div className="border-t border-slate-100 my-2"></div>
-
-        {/* Account Settings */}
-        <Link
-          href="/account"
-          onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
-        >
-          <User size={18} className="mr-3 text-slate-400" />
-          <span className="font-medium">Account</span>
-        </Link>
+      {/* Settings & Account */}
+      <div className="border-t border-slate-100 my-2"></div>
+      <div className="px-2">
+        <div className="px-2 py-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</p>
+        </div>
         
         <Link
           href="/account/settings"
           onClick={onClose}
-          className="flex items-center px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200"
+          className="flex items-center px-3 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 rounded-lg mx-2"
         >
-          <Settings size={18} className="mr-3 text-slate-400" />
+          <Settings size={18} className="mr-3 text-gray-500" />
           <span className="font-medium">Settings</span>
         </Link>
       </div>
@@ -225,7 +228,7 @@ function UserDropdown({ isOpen, onClose, className }: Readonly<UserDropdownProps
       <div className="border-t border-slate-100 py-2">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+          className="flex items-center w-full px-3 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 rounded-lg mx-2"
         >
           <LogOut size={18} className="mr-3 text-red-500" />
           <span className="font-medium">Log out</span>

@@ -119,63 +119,66 @@ function DetailPage() {
         shareText={shareData.text}
       />
 
-      <section className="space-y-6">
+      <section className="space-y-6 px-3 sm:px-0">
         <ImageGallery images={displayImages} />
 
-        {/* Main content area */}
-        <div className="mx-auto w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left side - Property details and description */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Property header */}
-            <div className="flex justify-between space-y-4">
+        {/* Main content area - Mobile first responsive layout */}
+        <div className="mx-auto w-full max-w-6xl space-y-8">
+          {/* Property details section */}
+          <div className="space-y-6">
+            {/* Property header - Mobile optimized */}
+            <div className="space-y-4">
               <div>
-                <h1 className="text-2xl font-semibold text-teal-600">
+                <h1 className="text-xl sm:text-2xl font-semibold text-teal-600 mb-3">
                   {property.isAvailable ? 'Available to rent now!' : 'Currently not available'}
                 </h1>
-                <p className="text-slate-600 text-lg">
+                <p className="text-slate-600 text-base sm:text-lg">
                   {property.bedrooms} bedrooms • {property.bathrooms} bathroom • {property.areaSqm} Sqm
                 </p>
               </div>
 
-              {/* Stats section */}
-              <div className="flex items-center space-x-8">
-                <div className="flex items-center space-x-8">
+              {/* Stats section - Mobile optimized */}
+              <div className="grid grid-cols-2 gap-6 pt-4 border-t border-slate-200">
+                {/* Rating */}
+                <div className="flex items-center space-x-3">
                   <Image
                     src="https://res.cloudinary.com/dqhuvu22u/image/upload/v1758219434/rentverse-base/icon-star_kwohms.png"
                     width={24}
                     height={24}
                     alt="Star icon"
-                    className="w-12 h-12"
+                    className="w-8 h-8 sm:w-10 sm:h-10"
                   />
-                  <div className="text-center">
-                    <div className="text-xl font-semibold text-slate-900">
+                  <div>
+                    <div className="text-lg sm:text-xl font-semibold text-slate-900">
                       {property.averageRating > 0 ? property.averageRating.toFixed(1) : '4.8'}
                     </div>
-                    <div className="text-sm text-slate-500">
+                    <div className="text-xs sm:text-sm text-slate-500">
                       {property.totalRatings > 0 ? `${property.totalRatings} reviews` : 'Guest reviews'}
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-slate-900">
+                {/* Viewers */}
+                <div className="text-center sm:text-left">
+                  <div className="text-lg sm:text-xl font-semibold text-slate-900">
                     {property.viewCount > 1000 ? `${Math.floor(property.viewCount / 1000)}K` : property.viewCount}
                   </div>
-                  <div className="text-sm text-slate-500">Viewers</div>
+                  <div className="text-xs sm:text-sm text-slate-500">Viewers</div>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <div>
-              <p className="text-slate-600 leading-relaxed">
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-xl">
+              <h3 className="font-semibold text-slate-900 mb-3 text-lg">About this place</h3>
+              <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
                 {property.description || 'Lorem ipsum dolor sit amet consectetur. Nisl ac mi turpis commodo. Velit tristique lobortis imperdiet aliquam eget. Ultrices diam fringilla sollicitudin dignissim elementum ultrices. Volutpat volutpat in amet ipsum libero. Amet ultrices sit pretium eu enim mi. Sit euismod vel posuere adipiscing nisi auctor. Sit a malesuada arcu morbi amet. Ut nunc mauris dolor sit sagittis eget sed. Nisl porttitor in nascetur maecenas semper massa.'}
               </p>
             </div>
           </div>
 
-          {/* Right side - Booking box */}
-          <div className="lg:col-span-1">
+          {/* Booking section - Always visible on mobile */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-6 shadow-sm">
             <BoxPropertyPrice 
               price={displayPrice} 
               propertyId={property.id} 
@@ -186,16 +189,16 @@ function DetailPage() {
       </section>
 
       {/* Location section */}
-      <section className="mx-auto w-full max-w-6xl space-y-6 py-8">
+      <section className="mx-auto w-full max-w-6xl space-y-6 py-8 px-3 sm:px-0">
         <div className="text-center space-y-2">
-          <h2 className="font-serif text-3xl text-teal-900">Where you will be</h2>
-          <p className="text-lg text-slate-600">
+          <h2 className="font-serif text-2xl sm:text-3xl text-teal-900">Where you will be</h2>
+          <p className="text-base sm:text-lg text-slate-600">
             {property.address}, {property.city}, {property.state}, {property.country === 'MY' ? 'Malaysia' : property.country}
           </p>
         </div>
 
         {/* MapTiler Map */}
-        <div className="w-full h-80 rounded-2xl overflow-hidden border border-slate-200">
+        <div className="w-full h-64 sm:h-80 rounded-2xl overflow-hidden border border-slate-200">
           <MapViewer
             center={{ 
               lng: property.longitude || 102.2386, 
