@@ -228,7 +228,7 @@ function ModalLogIn({ isModal = true }: ModalLogInProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex items-center justify-center p-4">
       {containerContent}
     </div>
   )
