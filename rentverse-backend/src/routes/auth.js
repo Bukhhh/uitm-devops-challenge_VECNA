@@ -26,6 +26,7 @@ const otpService = require('../services/otpService');
 const emailService = require('../utils/emailService');
 const aiService = require('../services/aiIntegration.service');
 const activityLogger = require('../services/activityLogger');
+const securityAnomalyDetection = require('../services/securityAnomalyDetection');
 
 // Alias for backward compatibility
 const logger = activityLogger;

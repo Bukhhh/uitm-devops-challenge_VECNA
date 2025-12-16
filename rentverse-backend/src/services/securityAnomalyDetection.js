@@ -6,13 +6,59 @@ class SecurityAnomalyDetection {
   constructor() {
     this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
     this.anomalyThresholds = {
-      failedLogins: 3, // Number of failed logins before flagging
+      failedLogins: 3, // Number of failed logins before flagging`n      failedOTPs: 5, // Number of failed OTP attempts before flagging
       unusualHours: { start: 23, end: 6 }, // Outside 11 PM - 6 AM
       locationChangeThreshold: 100, // KM difference to flag location change
       apiRateLimitBreaches: 5, // Number of rate limit breaches
       sessionDuration: { min: 300, max: 28800 } // 5 min to 8 hours
     };
   }
+
+  // Analyze OTP failure patterns for anomalies
+  async analyzeOTPFailure(userId, ipAddress, userAgent) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      });
+
+      if (!user) return null;
+
+      const anomalies = [];
+
+      // Check for multiple failed OTP attempts
+      const recentFailedOTPs = await this.getRecentFailedOTPs(userId, 15); // Last 15 minutes
+      if (recentFailedOTPs.length >= this.anomalyThresholds.failedOTPs) {
+        anomalies.push({
+          type: 'MULTIPLE_FAILED_OTPS',
+          severity: 'HIGH',
+          description: `User ${user.email} has ${recentFailedOTPs.length} failed OTP attempts in the last 15 minutes`,
+          metadata: {
+            failedAttempts: recentFailedOTPs.length,
+            recentIPs: [...new Set(recentFailedOTPs.map(o => o.ipAddress))],
+            timeframe: '15 minutes'
+          }
+        });
+      }
+
+      // Record anomalies if any found
+      if (anomalies.length > 0) {
+        await this.recordAnomalies(userId, anomalies, ipAddress, userAgent);
+        await this.sendSecurityAlerts(userId, anomalies);
+      }
+
+      return anomalies;
+    } catch (error) {
+      console.error('OTP failure analysis error:', error);
+      return [];
+    }
+  }
+
 
   // Analyze login patterns for anomalies
   async analyzeLoginPattern(userId, ipAddress, userAgent, success, timestamp) {
@@ -302,6 +348,26 @@ class SecurityAnomalyDetection {
       where: {
         userId,
         action: { in: ['LOGIN_FAILED', 'LOGIN_ATTEMPT'] },
+
+  // Get recent failed OTP attempts for a user
+  async getRecentFailedOTPs(userId, minutesBack) {
+    const cutoff = new Date(Date.now() - minutesBack * 60 * 1000);
+    
+    const logs = await prisma.activityLog.findMany({
+      where: {
+        userId,
+        action: { in: ['OTP_FAILED_INVALID', 'OTP_FAILED_EXPIRED'] },
+        createdAt: { gte: cutoff }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return logs.map(log => ({
+      ipAddress: log.ipAddress,
+      timestamp: log.createdAt
+    }));
+  }
+
         createdAt: { gte: cutoff }
       },
       orderBy: { createdAt: 'desc' }

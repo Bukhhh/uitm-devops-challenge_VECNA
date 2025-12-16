@@ -99,7 +99,7 @@ export default function SecurityDashboard() {
       const token = localStorage.getItem('authToken')
       if (!token) throw new Error('Authentication token not found')
 
-      const apiUrl = createApiUrl('security-monitoring/activity?limit=20')
+      const apiUrl = '/api/auth/activity-logs'
       const response = await fetch(apiUrl, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
@@ -107,8 +107,10 @@ export default function SecurityDashboard() {
       if (!response.ok) throw new Error(`Failed to fetch activity logs: ${response.statusText}`)
       
       const data = await response.json()
-      if (data.success && data.data.activities) {
-        setActivityLogs(data.data.activities)
+      if (data.success && data.data) {
+        // Handle different response formats - auth endpoint returns data.data as array
+        const activities = Array.isArray(data.data) ? data.data : data.data.activities || []
+        setActivityLogs(activities)
       } else {
         throw new Error(data.message || 'Failed to fetch logs')
       }
@@ -170,7 +172,7 @@ export default function SecurityDashboard() {
         if (data.success && data.data.user && data.data.user.role === 'ADMIN') {
           setUser(data.data.user)
           fetchActivityLogs();
-          fetchRealtimeThreats(); // Initial fetch
+          // fetchRealtimeThreats(); // Temporarily disabled
         } else {
           setError(data.data.user.role !== 'ADMIN' ? 'Access denied. Admin role required.' : 'Failed to load user data')
         }
@@ -186,7 +188,7 @@ export default function SecurityDashboard() {
     // Set up polling for real-time threats
     const interval = setInterval(() => {
       if (isLoggedIn && user?.role === 'ADMIN') {
-        fetchRealtimeThreats();
+        // fetchRealtimeThreats(); // Temporarily disabled
       }
     }, 15000); // Poll every 15 seconds
 
