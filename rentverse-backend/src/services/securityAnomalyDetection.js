@@ -6,7 +6,8 @@ class SecurityAnomalyDetection {
   constructor() {
     this.aiServiceUrl = process.env.AI_SERVICE_URL || 'http://localhost:8000';
     this.anomalyThresholds = {
-      failedLogins: 3, // Number of failed logins before flagging`n      failedOTPs: 5, // Number of failed OTP attempts before flagging
+      failedLogins: 3, // Number of failed logins before flagging
+      failedOTPs: 5, // Number of failed OTP attempts before flagging
       unusualHours: { start: 23, end: 6 }, // Outside 11 PM - 6 AM
       locationChangeThreshold: 100, // KM difference to flag location change
       apiRateLimitBreaches: 5, // Number of rate limit breaches
@@ -58,7 +59,6 @@ class SecurityAnomalyDetection {
       return [];
     }
   }
-
 
   // Analyze login patterns for anomalies
   async analyzeLoginPattern(userId, ipAddress, userAgent, success, timestamp) {
@@ -115,7 +115,7 @@ class SecurityAnomalyDetection {
         // For now, we'll flag different countries/regions
         const ipLocation = await this.getIPLocation(ipAddress);
         const lastIpLocation = await this.getIPLocation(user.lastLoginIp);
-        
+
         if (ipLocation.country !== lastIpLocation.country) {
           anomalies.push({
             type: 'SUSPICIOUS_LOCATION',
@@ -306,7 +306,7 @@ class SecurityAnomalyDetection {
 
       // Log high severity anomalies
       const highSeverityAnomalies = anomalies.filter(a => a.severity === 'HIGH' || a.severity === 'CRITICAL');
-      
+
       if (highSeverityAnomalies.length > 0) {
         console.log(`🚨 HIGH SEVERITY SECURITY ALERT for ${user.email}:`);
         highSeverityAnomalies.forEach(anomaly => {
@@ -324,7 +324,7 @@ class SecurityAnomalyDetection {
   // Log security alerts for audit trail
   async logSecurityAlert(user, anomalies) {
     const activityLogger = require('./activityLogger');
-    
+
     for (const anomaly of anomalies) {
       await activityLogger.log(
         `SECURITY_ALERT: ${anomaly.type}`,
@@ -343,16 +343,26 @@ class SecurityAnomalyDetection {
   // Get recent failed login attempts for a user
   async getRecentFailedLogins(userId, minutesBack) {
     const cutoff = new Date(Date.now() - minutesBack * 60 * 1000);
-    
+
     const logs = await prisma.activityLog.findMany({
       where: {
         userId,
         action: { in: ['LOGIN_FAILED', 'LOGIN_ATTEMPT'] },
+        createdAt: { gte: cutoff }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return logs.map(log => ({
+      ipAddress: log.ipAddress,
+      timestamp: log.createdAt
+    }));
+  }
 
   // Get recent failed OTP attempts for a user
   async getRecentFailedOTPs(userId, minutesBack) {
     const cutoff = new Date(Date.now() - minutesBack * 60 * 1000);
-    
+
     const logs = await prisma.activityLog.findMany({
       where: {
         userId,
@@ -368,21 +378,10 @@ class SecurityAnomalyDetection {
     }));
   }
 
-        createdAt: { gte: cutoff }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    return logs.map(log => ({
-      ipAddress: log.ipAddress,
-      timestamp: log.createdAt
-    }));
-  }
-
   // Get recent successful logins for a user
   async getRecentLogins(userId, minutesBack) {
     const cutoff = new Date(Date.now() - minutesBack * 60 * 1000);
-    
+
     const logs = await prisma.activityLog.findMany({
       where: {
         userId,
@@ -398,7 +397,7 @@ class SecurityAnomalyDetection {
   // Get user's recent activity (last N hours)
   async getUserRecentActivity(userId, hoursBack) {
     const cutoff = new Date(Date.now() - hoursBack * 60 * 60 * 1000);
-    
+
     const activities = await prisma.activityLog.findMany({
       where: {
         userId,
@@ -419,7 +418,7 @@ class SecurityAnomalyDetection {
   // Get recent API calls for analysis
   async getRecentAPIcalls(userId, secondsBack) {
     const cutoff = new Date(Date.now() - secondsBack * 1000);
-    
+
     const logs = await prisma.activityLog.findMany({
       where: {
         userId,
@@ -517,7 +516,7 @@ class SecurityAnomalyDetection {
   async getSecurityStatistics(daysBack = 30) {
     try {
       const cutoff = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
-      
+
       const [
         totalAnomalies,
         resolvedAnomalies,
@@ -529,13 +528,13 @@ class SecurityAnomalyDetection {
           where: { createdAt: { gte: cutoff } }
         }),
         prisma.securityAnomaly.count({
-          where: { 
+          where: {
             createdAt: { gte: cutoff },
             resolved: true
           }
         }),
         prisma.securityAnomaly.count({
-          where: { 
+          where: {
             createdAt: { gte: cutoff },
             severity: { in: ['HIGH', 'CRITICAL'] }
           }
