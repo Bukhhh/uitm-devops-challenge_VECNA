@@ -56,7 +56,7 @@ export class BookingApiClient {
         console.log('[BookingAPI] Booking data:', bookingData)
       }
 
-      const apiUrl = `${getApiBaseUrl()}/api/bookings`
+      const apiUrl = `https://rentverse-production.up.railway.app/api/bookings`
       console.log('[BookingAPI] Calling:', apiUrl)
 
       const response = await fetch(apiUrl, {
@@ -91,7 +91,7 @@ export class BookingApiClient {
    */
   static async getUserBookings(): Promise<BookingResponse[]> {
     try {
-      const apiUrl = `${getApiBaseUrl()}/api/bookings/my-bookings`
+      const apiUrl = `https://rentverse-production.up.railway.app/api/bookings/my-bookings`
       console.log('[BookingAPI] Calling:', apiUrl)
 
       const response = await fetch(apiUrl, {
@@ -115,7 +115,7 @@ export class BookingApiClient {
    */
   static async getBookingById(bookingId: string): Promise<BookingResponse> {
     try {
-      const apiUrl = `${getApiBaseUrl()}/api/bookings/${bookingId}`
+      const apiUrl = `https://rentverse-production.up.railway.app/api/bookings/${bookingId}`
       console.log('[BookingAPI] Calling:', apiUrl)
 
       const response = await fetch(apiUrl, {
@@ -139,7 +139,7 @@ export class BookingApiClient {
    */
   static async cancelBooking(bookingId: string): Promise<BookingResponse> {
     try {
-      const apiUrl = `${getApiBaseUrl()}/api/bookings/${bookingId}/cancel`
+      const apiUrl = `https://rentverse-production.up.railway.app/api/bookings/${bookingId}/cancel`
       console.log('[BookingAPI] Calling:', apiUrl)
 
       const response = await fetch(apiUrl, {
