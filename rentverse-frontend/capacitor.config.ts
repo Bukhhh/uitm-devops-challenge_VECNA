@@ -1,13 +1,15 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.rentverse.app',
-  appName: 'RentVerse',
+  appId: 'com.rentverseVECNA.app',
+  appName: 'Rentverse-VECNA',
   webDir: 'out',
   server: {
-    // Will be updated after Vercel deployment
-    // url: 'https://your-app.vercel.app',
-    // cleartext: false,
+    // For development, use your local server
+    // url: 'http://YOUR_IP:3001',
+    // cleartext: true,
+
+    // For production, leave commented (uses bundled assets)
   },
   android: {
     allowMixedContent: true,
