@@ -26,6 +26,9 @@ import useAuthStore from '@/stores/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import { createApiUrl } from '@/utils/apiConfig'
 
+import { fetchSecurityAlerts, resolveSecurityAlert, getSeverityColor, getAlertTypeIcon } from '@/utils/securityApiClient'
+import type { SecurityAlert } from '@/types/security'
+
 // --- TYPE DEFINITIONS ---
 
 interface AuthUser {
@@ -87,6 +90,11 @@ export default function SecurityDashboard() {
   const [isLogsLoading, setIsLogsLoading] = useState(true)
   const [logsError, setLogsError] = useState<string | null>(null)
   
+  // Security alerts states
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([])
+  const [isLoadingSecurityAlerts, setIsLoadingSecurityAlerts] = useState(true)
+  const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set())
+
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   
@@ -143,58 +151,172 @@ export default function SecurityDashboard() {
     }
   }, []);
 
+  const fetchSecurityAlertsData = useCallback(async () => {
+    setIsLoadingSecurityAlerts(true)
+    try {
+      const response = await fetchSecurityAlerts()
+      if (response.success) {
+        setSecurityAlerts(response.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch security alerts:', err)
+  const handleResolveAlert = useCallback(async (alertId: string) => {
+    setResolvingAlerts(prev => new Set(prev).add(alertId))
+    try {
+      const response = await resolveSecurityAlert(alertId)
+      if (response.success) {
+        setSecurityAlerts(prev => prev.filter(alert => alert.id !== alertId))
+        showToastMessage('Security alert resolved successfully')
+      }
+    } catch (err) {
+      console.error('Failed to resolve alert:', err)
+      showToastMessage('Failed to resolve security alert')
+    } finally {
+      setResolvingAlerts(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(alertId)
+        return newSet
+      })
+    }
+  }, [showToastMessage])
+
+    } finally {
+      setIsLoadingSecurityAlerts(false)
+    }
+  }, [])
+
   // Main effect for initialization and polling
+  // Main effect for initialization and polling
+
+
   useEffect(() => {
+
+
     const checkAdminRole = async () => {
+
+
       if (!isLoggedIn) {
+
+
         setIsLoading(false)
+
+
         return
+
+
       }
 
+
       try {
+
+
         const token = localStorage.getItem('authToken')
+
+
         if (!token) {
+
+
           setError('Authentication token not found')
+
+
           return
+
+
         }
 
+
         const response = await fetch('/api/auth/me', {
+
+
           headers: {
+
+
             'Content-Type': 'application/json',
+
+
             'Authorization': `Bearer ${token}`,
+
+
           },
+
+
         })
+
 
         if (!response.ok) throw new Error(`Failed to fetch user data: ${response.status}`)
 
+
         const data = await response.json()
-        
+
+
         if (data.success && data.data.user && data.data.user.role === 'ADMIN') {
+
+
           setUser(data.data.user)
+
+
           fetchActivityLogs();
+
+
+          fetchSecurityAlertsData();
+
+
           // fetchRealtimeThreats(); // Temporarily disabled
+
+
         } else {
+
+
           setError(data.data.user.role !== 'ADMIN' ? 'Access denied. Admin role required.' : 'Failed to load user data')
+
+
         }
+
+
       } catch (err) {
+
+
         setError(err instanceof Error ? err.message : 'Failed to verify admin access')
+
+
       } finally {
+
+
         setIsLoading(false)
+
+
       }
+
+
     }
 
+
     checkAdminRole();
-    
+
+
     // Set up polling for real-time threats
+
+
     const interval = setInterval(() => {
+
+
       if (isLoggedIn && user?.role === 'ADMIN') {
+
+
         // fetchRealtimeThreats(); // Temporarily disabled
+
+
       }
+
+
     }, 15000); // Poll every 15 seconds
+
 
     return () => clearInterval(interval); // Cleanup on unmount
 
-  }, [isLoggedIn, user?.role, fetchActivityLogs, fetchRealtimeThreats])
+
+  }, [isLoggedIn, user?.role, fetchActivityLogs, fetchSecurityAlertsData, fetchRealtimeThreats])
+
 
   const showToastMessage = (message: string) => {
     setToastMessage(message)
@@ -277,7 +399,81 @@ export default function SecurityDashboard() {
           </button>
         </div>
       </div>
+      </div>
       
+      {/* Security Alerts */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center">
+              <Bell className="w-5 h-5 mr-2 text-red-600" />
+              Security Alerts
+              {securityAlerts.length > 0 && (
+                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+                  {securityAlerts.length}
+                </span>
+              )}
+            </h3>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-slate-600">Live</span>
+            </div>
+          </div>
+        </div>
+        
+        {isLoadingSecurityAlerts && <p className="p-6 text-slate-500">Loading security alerts...</p>}
+        {!isLoadingSecurityAlerts && (
+          <div className="p-6">
+            {securityAlerts.length > 0 ? (
+              <div className="space-y-4">
+                {securityAlerts.slice(0, 5).map((alert) => (
+                  <div key={alert.id} className="flex items-start justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <span className="text-lg">{getAlertTypeIcon(alert.type)}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h4 className="font-medium text-slate-900">{alert.type.replace(/_/g, ' ')}</h4>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(alert.severity)}`}>{alert.severity}</span>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-2">{alert.description}</p>
+                        <div className="text-xs text-slate-500">
+                          <span>User: {alert.user.name || alert.user.email}</span>
+                          <span className="mx-2">·</span>
+                          <span>IP: {alert.ipAddress}</span>
+                          <span className="mx-2">·</span>
+                          <span>{formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleResolveAlert(alert.id)}
+                      disabled={resolvingAlerts.has(alert.id)}
+                      className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-slate-300 text-sm"
+                    >
+                      {resolvingAlerts.has(alert.id) ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      <span>{resolvingAlerts.has(alert.id) ? 'Resolving...' : 'Resolve'}</span>
+                    </button>
+                  </div>
+                ))}
+                {securityAlerts.length > 5 && (
+                  <p className="text-sm text-slate-500 text-center">... and {securityAlerts.length - 5} more alerts</p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                <p className="text-slate-600">No security alerts at this time.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Live Activity Feed (Module 5) */}
       {/* Live Activity Feed (Module 5) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="p-6 border-b border-slate-200">
