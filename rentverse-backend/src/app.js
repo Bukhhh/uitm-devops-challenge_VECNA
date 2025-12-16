@@ -214,6 +214,7 @@ const propertyTypeRoutes = require('./modules/propertyTypes/propertyTypes.routes
 const amenityRoutes = require('./modules/amenities/amenities.routes');
 const predictionRoutes = require('./modules/predictions/predictions.routes');
 const userSettingsRoutes = require('./modules/userSettings/userSettings.routes');
+const securityMonitoringRoutes = require('./modules/securityMonitoring/securityMonitoring.routes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -225,6 +226,7 @@ app.use('/api/property-types', propertyTypeRoutes);
 app.use('/api/amenities', amenityRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/user-settings', userSettingsRoutes);
+app.use('/api/security-monitoring', securityMonitoringRoutes);
 
 // Welcome endpoint
 app.get('/', (req, res) => {

@@ -68,6 +68,8 @@ model User {
 
   // --- MODULE 5: NEW INVERSE RELATION (TAMBAH INI) ---
   activityLogs      ActivityLog[]
+  securityAnomalies SecurityAnomaly[]
+  digitalSignatures DigitalSignature[]
   // ----------------------------------------------------
 
   // Relations (Keep these exactly as they were)
@@ -408,4 +410,74 @@ model ActivityLog {
   user      User?    @relation(fields: [userId], references: [id])
 
   @@map("activity_logs")
+}
+
+// --- SECURITY MONITORING ---
+model SecurityAnomaly {
+  id          String           @id @default(uuid())
+  userId      String?
+  type        AnomalyType
+  severity    AnomalySeverity  @default(MEDIUM)
+  description String
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  resolved    Boolean          @default(false)
+  resolvedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  user        User?            @relation(fields: [userId], references: [id])
+
+  @@index([type, severity])
+  @@index([resolved])
+  @@index([createdAt])
+  @@map("security_anomalies")
+}
+
+// --- DIGITAL SIGNATURES ---
+model DigitalSignature {
+  id             String            @id @default(uuid())
+  documentId     String
+  userId         String
+  signatureHash  String            @unique
+  nonce          String
+  status         SignatureStatus   @default(PENDING)
+  ipAddress      String?
+  userAgent      String?
+  signedAt       DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  metadata       Json?
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, status])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("digital_signatures")
+}
+
+// --- SECURITY ENUMS ---
+enum AnomalyType {
+  FAILED_LOGIN
+  MULTIPLE_FAILED_LOGINS
+  SUSPICIOUS_LOCATION
+  UNUSUAL_ACCESS_TIME
+  API_ABUSE
+  BRUTE_FORCE
+  RATE_LIMIT_EXCEEDED
+}
+
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SignatureStatus {
+  PENDING
+  SIGNED
+  REJECTED
+  EXPIRED
 }
