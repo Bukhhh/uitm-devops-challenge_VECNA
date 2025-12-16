@@ -326,7 +326,7 @@ Risk Score: ${details.riskScore ? (details.riskScore * 100).toFixed(0) : 'N/A'}/
 Time: ${new Date().toUTCString()}
 
 If this was not you, please visit our website to secure your account immediately.
-    \`;
+    `;
   }
 
   /**
