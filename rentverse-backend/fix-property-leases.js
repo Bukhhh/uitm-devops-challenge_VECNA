@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function fixPropertyDeletion() {
-  const propertyId = '05259067-3232-4f61-ad62-31fc12f447ca';
+  const propertyId = '932d1bdf-7322-43ea-84d7-96a470fd5721';
 
   console.log('🔧 Fixing foreign key constraint violation for property deletion...');
 
