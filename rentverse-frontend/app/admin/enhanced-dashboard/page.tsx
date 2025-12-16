@@ -89,7 +89,7 @@ export default function EnhancedDashboard() {
         throw new Error('Authentication token not found')
       }
 
-      const response = await fetch('/api/admin/activity-logs?limit=10', {
+      const response = await fetch('/api/security-monitoring/activity?limit=10', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -100,8 +100,8 @@ export default function EnhancedDashboard() {
       }
       
       const data = await response.json()
-      if (data.success) {
-        setActivityLogs(data.data)
+      if (data.success && data.data.activities) {
+        setActivityLogs(data.data.activities)
       } else {
         throw new Error(data.message || 'Failed to fetch logs')
       }
