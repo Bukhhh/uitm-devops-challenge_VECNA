@@ -1496,5 +1496,67 @@ router.get(
   }
 );
 
+// ====================================================================
+// SECURITY ALERTS ENDPOINT (Admin Only)
+// ====================================================================
+
+/**
+ * @swagger
+ * /api/auth/security-alerts:
+ *   get:
+ *     summary: Get active security alerts (Admin only)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Security alerts retrieved
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get(
+  '/security-alerts',
+  async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: 'No token provided',
+        });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+      });
+
+      if (!user || user.role !== 'ADMIN') {
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions',
+        });
+      }
+
+      // Get recent security alerts from anomaly detection service
+      const alerts = await securityAnomalyDetection.getUnresolvedAnomalies();
+
+      res.json({
+        success: true,
+        count: alerts.length,
+        data: alerts,
+      });
+    } catch (error) {
+      console.error('❌ Error fetching security alerts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server Error',
+      });
+    }
+  }
+);
+
 module.exports = router;
 
