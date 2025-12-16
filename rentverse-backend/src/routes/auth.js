@@ -256,6 +256,9 @@ router.post(
           ipAddress
         );
 
+        // Analyze login patterns for security anomalies
+        await securityAnomalyDetection.analyzeLoginPattern(user.id, ipAddress, userAgent, false, new Date().toISOString());
+
         return res.status(401).json({
           success: false,
           message: 'Invalid credentials',
@@ -482,6 +485,9 @@ router.post(
 
       // Remove sensitive data (original pattern)
       const { password: _, mfaSecret: __, ...userWithoutSecrets } = user;
+
+      // Analyze successful login patterns for security anomalies
+      await securityAnomalyDetection.analyzeLoginPattern(user.id, ipAddress, req.headers['user-agent'] || 'Unknown', true, new Date().toISOString());
 
       // Log successful login
       await logger.log(
