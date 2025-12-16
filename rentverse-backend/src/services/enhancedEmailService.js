@@ -238,6 +238,98 @@ Security Notice:
   }
 
   /**
+   * Send Security Alert email
+   */
+  async sendSecurityAlertEmail(email, details) {
+    if (!this.isConfigured) {
+      console.warn('⚠️ Email service not configured - security alert will be logged');
+      return;
+    }
+
+    const mailOptions = {
+      from: {
+        name: 'RentVerse Security',
+        address: process.env.FROM_EMAIL || 'noreply@rentverse.com'
+      },
+      to: email,
+      subject: 'RentVerse Security Alert: Suspicious Login Attempt Detected',
+      html: this.generateSecurityAlertEmailTemplate(email, details),
+      text: this.generateSecurityAlertTextTemplate(details),
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Security alert email sent successfully to ${email}`);
+      if (nodemailer.getTestMessageUrl(info)) {
+        console.log(`🔗 Preview: ${nodemailer.getTestMessageUrl(info)}`);
+      }
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      console.error(`❌ Failed to send security alert to ${email}:`, error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Generate HTML email template for Security Alert
+   */
+  generateSecurityAlertEmailTemplate(email, details) {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>RentVerse Security Alert</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; border-left: 8px solid #d9534f; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <div style="background: #d9534f; padding: 40px 20px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">🛡️ Security Alert</h1>
+          </div>
+          <div style="padding: 40px 20px;">
+            <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Suspicious Activity Detected</h2>
+            <p style="color: #4b5563; margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+              Hello, our systems have detected a suspicious login attempt on your RentVerse account.
+            </p>
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <p style="margin: 0 0 10px 0;"><strong>Reason:</strong> ${details.reason || 'Unusual login pattern'}</p>
+              <p style="margin: 0 0 10px 0;"><strong>Risk Score:</strong> ${details.riskScore ? (details.riskScore * 100).toFixed(0) : 'N/A'}/100</p>
+              <p style="margin: 0;"><strong>Time:</strong> ${new Date().toUTCString()}</p>
+            </div>
+            <p style="color: #4b5563; margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+              <strong>If this was not you</strong>, please secure your account immediately by resetting your password.
+            </p>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings/security" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; margin-top: 15px;">
+              Secure Your Account
+            </a>
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; margin-top: 30px;">
+              <p style="color: #9ca3af; margin: 0; font-size: 12px;">This alert was sent to ${email}.</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  /**
+   * Generate plain text version of Security Alert email
+   */
+  generateSecurityAlertTextTemplate(details) {
+    return \`
+RentVerse - Security Alert
+
+Suspicious activity was detected on your account.
+
+Reason: ${details.reason || 'Unusual login pattern'}
+Risk Score: ${details.riskScore ? (details.riskScore * 100).toFixed(0) : 'N/A'}/100
+Time: ${new Date().toUTCString()}
+
+If this was not you, please visit our website to secure your account immediately.
+    \`;
+  }
+
+  /**
    * Fallback method when email service is unavailable
    */
   async logOTPFallback(email, otp, userName) {

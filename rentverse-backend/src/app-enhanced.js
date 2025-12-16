@@ -149,6 +149,7 @@ const propertyTypeRoutes = require('./modules/propertyTypes/propertyTypes.routes
 const amenityRoutes = require('./modules/amenities/amenities.routes');
 const predictionRoutes = require('./modules/predictions/predictions.routes');
 const userSettingsRoutes = require('./modules/userSettings/userSettings.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -160,6 +161,7 @@ app.use('/api/property-types', propertyTypeRoutes);
 app.use('/api/amenities', amenityRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/user-settings', userSettingsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Welcome endpoint
 app.get('/', (req, res) => {

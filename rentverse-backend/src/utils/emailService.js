@@ -251,8 +251,169 @@ const sendOTPEmail = async (email, otp) => {
   }
 };
 
+const sendSecurityAlertEmail = async (email, details) => {
+  try {
+    const emailHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Alert - Rentverse</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f7;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            margin: 20px auto;
+            padding: 30px;
+            max-width: 600px;
+            border-left: 8px solid #d9534f;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #d9534f;
+            font-size: 28px;
+            margin: 0;
+        }
+        .content h2 {
+            color: #333;
+            font-size: 20px;
+        }
+        .content p {
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        .details-box {
+            background-color: #fcf8e3;
+            border: 1px solid #faebcc;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .details-box strong {
+            color: #8a6d3b;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #337ab7;
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Security Alert</h1>
+        </div>
+        <div class="content">
+            <h2>Suspicious Activity Detected on Your Account</h2>
+            <p>Hello,</p>
+            <p>Our security system detected a login attempt on your Rentverse account that we consider suspicious. We are notifying you immediately to ensure your account remains secure.</p>
+            
+            <div class="details-box">
+                <p><strong>Reason for alert:</strong> ${details.reason || 'Unusual login pattern'}</p>
+                <p><strong>Time of event:</strong> ${new Date().toUTCString()}</p>
+                <p><strong>Risk Score Assessed:</strong> ${details.riskScore ? (details.riskScore * 100).toFixed(0) : 'N/A'}/100</p>
+            </div>
+
+            <h3>What should you do?</h3>
+            <p>If this was you, you can safely ignore this email. A login attempt was made, but this alert is just a precaution.</p>
+            <p><strong>If this was not you</strong>, your account may be at risk. We strongly recommend you take the following actions immediately:</p>
+            <ol>
+                <li>Change your password.</li>
+                <li>Review your recent account activity.</li>
+                <li>Ensure Two-Factor Authentication (MFA) is enabled.</li>
+            </ol>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings/security" class="action-button" style="color: white;">Secure Your Account</a>
+        </div>
+        <div class="footer">
+            <p>Rentverse Security Team</p>
+            <p>&copy; 2024 Rentverse. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+    `;
+
+    let response;
+    let emailService;
+
+    if (resend) {
+      try {
+        response = await resend.emails.send({
+          from: 'Rentverse Security <security@rentverse-vecna-secure.xyz>',
+          to: email,
+          subject: 'Rentverse Security Alert: Suspicious Login Attempt',
+          html: emailHtml,
+        });
+        emailService = 'Resend API';
+      } catch (resendError) {
+        console.warn('⚠️ Resend failed, falling back to Gmail SMTP:', resendError.message);
+        response = await gmailTransporter.sendMail({
+          from: 'Rentverse Security <mohdbukhari03@gmail.com>',
+          to: email,
+          subject: 'Rentverse Security Alert: Suspicious Login Attempt',
+          html: emailHtml,
+        });
+        emailService = 'Gmail SMTP (Resend Fallback)';
+      }
+    } else {
+      response = await gmailTransporter.sendMail({
+        from: 'Rentverse Security <mohdbukhari03@gmail.com>',
+        to: email,
+        subject: 'Rentverse Security Alert: Suspicious Login Attempt',
+        html: emailHtml,
+      });
+      emailService = 'Gmail SMTP';
+    }
+
+    console.log('✅ Security Alert Email sent successfully:', {
+      email,
+      service: emailService,
+    });
+
+    return {
+      success: true,
+      messageId: response.id || 'gmail_success',
+    };
+
+  } catch (error) {
+    console.error('❌ Failed to send Security Alert email:', {
+      email,
+      error: error.message,
+    });
+    // Do not rethrow, as this is a non-critical notification
+  }
+};
+
 module.exports = {
   sendOTPEmail,
+  sendSecurityAlertEmail,
   resend: resend || null,
   gmailTransporter
 };

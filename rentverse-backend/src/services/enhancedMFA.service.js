@@ -2,7 +2,7 @@ const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../config/database');
-const { generateOTP, sendOTPEmail } = require('./otpService');
+const { generateOTP, sendOTPEmail, sendSecurityAlertEmail } = require('./otpService');
 
 class EnhancedMFAService {
   constructor() {
@@ -162,8 +162,21 @@ class EnhancedMFAService {
       // Check for suspicious login patterns
       const suspiciousActivity = await this.detectSuspiciousActivity(user);
       if (suspiciousActivity.blocked) {
+        // Log and notify if blocked
+        this.logMFAActivity(userId, 'LOGIN_BLOCKED', 'RISK_ANALYSIS', suspiciousActivity.reason, suspiciousActivity.riskScore);
+        sendSecurityAlertEmail(user.email, suspiciousActivity); // Fire-and-forget notification
         throw new Error(`Login blocked: ${suspiciousActivity.reason}`);
       }
+
+      // --- MODULE 4: SMART NOTIFICATION ---
+      // If activity is suspicious but not blocked, send a non-blocking alert email
+      if (suspiciousActivity.riskScore > 0.4) {
+        console.log(`🛡️ High risk score detected (${suspiciousActivity.riskScore}). Sending security alert.`);
+        this.logMFAActivity(userId, 'SUSPICIOUS_LOGIN_DETECTED', 'RISK_ANALYSIS', suspiciousActivity.reason, suspiciousActivity.riskScore);
+        // Fire-and-forget, don't await to avoid blocking the login flow
+        sendSecurityAlertEmail(user.email, suspiciousActivity);
+      }
+      // ------------------------------------
 
       // Generate OTP
       const { secret, token } = generateOTP();

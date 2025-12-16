@@ -79,10 +79,21 @@ const getStats = () => {
   };
 };
 
+// Send Security Alert via Enhanced Email Service
+const sendSecurityAlertEmail = async (email, details) => {
+  try {
+    console.log(`🛡️ Sending security alert to ${email} via enhanced email service`);
+    return await enhancedEmailService.sendSecurityAlertEmail(email, details);
+  } catch (error) {
+    console.error(`❌ Error in sendSecurityAlertEmail:`, error.message);
+  }
+};
+
 module.exports = { 
   generateOTP, 
   verifyOTP, 
   sendOTPEmail,
+  sendSecurityAlertEmail,
   healthCheck,
   getStats
 };
