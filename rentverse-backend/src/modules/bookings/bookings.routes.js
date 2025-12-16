@@ -426,34 +426,7 @@ router.get(
   bookingsController.getRentalAgreementPDF
 );
 
-/**
- * @swagger
- * /api/bookings/{id}/cancel:
- *   patch:
- *     summary: Cancel booking (tenant only)
- *     tags: [Bookings]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Booking ID
- *     responses:
- *       200:
- *         description: Booking cancelled successfully
- *       400:
- *         description: Booking cannot be cancelled
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Access denied
- *       404:
- *         description: Booking not found
- */
-router.patch('/:id/cancel', protect, bookingsController.cancelBooking);
+
 
 /**
  * @swagger
