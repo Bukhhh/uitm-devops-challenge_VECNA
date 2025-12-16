@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import { formatDistanceToNow } from 'date-fns'
+import { createApiUrl } from '@/utils/apiConfig'
 
 // --- TYPE DEFINITIONS ---
 
@@ -98,7 +99,8 @@ export default function SecurityDashboard() {
       const token = localStorage.getItem('authToken')
       if (!token) throw new Error('Authentication token not found')
 
-      const response = await fetch('/api/security-monitoring/activity?limit=20', {
+      const apiUrl = createApiUrl('security-monitoring/activity?limit=20')
+      const response = await fetch(apiUrl, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
 
@@ -122,7 +124,8 @@ export default function SecurityDashboard() {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
-      const response = await fetch('/api/security-monitoring/realtime', {
+      const realtimeUrl = createApiUrl('security-monitoring/realtime')
+      const response = await fetch(realtimeUrl, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
