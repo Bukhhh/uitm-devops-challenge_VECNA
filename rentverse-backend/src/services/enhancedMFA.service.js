@@ -448,18 +448,18 @@ class EnhancedMFAService {
     try {
       const activityLogger = require('./activityLogger');
       
-      await activityLogger.log({
-        type: 'MFA_SECURITY',
-        action: action,
-        userId: userId,
-        metadata: {
+      await activityLogger.log(
+        action,
+        userId,
+        {
+          type: 'MFA_SECURITY',
           method: method,
           riskScore: riskScore,
-          timestamp: new Date().toISOString()
+          error: error,
+          severity: action.includes('FAILED') || action.includes('BLOCKED') ? 'WARNING' : 'INFO',
         },
-        severity: action.includes('FAILED') || action.includes('BLOCKED') ? 'WARNING' : 'INFO',
-        timestamp: new Date()
-      });
+        null // IP Address not available in this context
+      );
     } catch (error) {
       console.error('Failed to log MFA activity:', error);
     }

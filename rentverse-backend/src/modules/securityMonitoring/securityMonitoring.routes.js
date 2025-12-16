@@ -261,15 +261,17 @@ router.post('/anomalies/:id/resolve', async (req, res) => {
     
     if (success) {
       // Log the resolution action
-      await activityLogger.log({
-        type: 'SECURITY_MONITORING',
-        action: 'ANOMALY_RESOLVED',
-        userId: adminId,
-        resourceId: id,
-        metadata: { resolution },
-        severity: 'INFO',
-        timestamp: new Date()
-      });
+      await activityLogger.log(
+        'ANOMALY_RESOLVED',
+        adminId,
+        {
+          type: 'SECURITY_MONITORING',
+          resourceId: id,
+          resolution: resolution,
+          severity: 'INFO'
+        },
+        req.ip
+      );
 
       res.status(200).json({
         success: true,

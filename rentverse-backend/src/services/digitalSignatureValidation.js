@@ -204,20 +204,19 @@ class DigitalSignatureValidation {
   async logSignatureActivity(activityData) {
     try {
       const activityLogger = require('./activityLogger');
-      await activityLogger.log({
-        type: 'DIGITAL_SIGNATURE',
-        action: activityData.action,
-        userId: activityData.userId,
-        resourceId: activityData.signatureId,
-        metadata: {
+      await activityLogger.log(
+        activityData.action,
+        activityData.userId,
+        {
+          type: 'DIGITAL_SIGNATURE',
+          resourceId: activityData.signatureId,
           documentId: activityData.documentId,
-          ipAddress: activityData.ipAddress,
           userAgent: activityData.userAgent,
-          ...activityData.metadata
+          metadata: activityData.metadata,
+          severity: activityData.action === 'SIGNED' ? 'INFO' : 'WARNING',
         },
-        severity: activityData.action === 'SIGNED' ? 'INFO' : 'WARNING',
-        timestamp: activityData.timestamp
-      });
+        activityData.ipAddress
+      );
     } catch (error) {
       console.error('Failed to log signature activity:', error);
     }

@@ -280,19 +280,17 @@ class SecurityAnomalyDetection {
     const activityLogger = require('./activityLogger');
     
     for (const anomaly of anomalies) {
-      await activityLogger.log({
-        type: 'SECURITY_ALERT',
-        action: anomaly.type,
-        userId: user.id,
-        metadata: {
+      await activityLogger.log(
+        `SECURITY_ALERT: ${anomaly.type}`,
+        user.id,
+        {
           userEmail: user.email,
           severity: anomaly.severity,
           description: anomaly.description,
           anomalyMetadata: anomaly.metadata
         },
-        severity: anomaly.severity === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
-        timestamp: new Date()
-      });
+        null // IP address is not available in this context
+      );
     }
   }
 
@@ -431,14 +429,16 @@ class SecurityAnomalyDetection {
 
       // Log the resolution
       const activityLogger = require('./activityLogger');
-      await activityLogger.log({
-        type: 'SECURITY_RESOLUTION',
-        action: 'ANOMALY_RESOLVED',
-        userId: resolvedBy,
-        resourceId: anomalyId,
-        severity: 'INFO',
-        timestamp: new Date()
-      });
+      await activityLogger.log(
+        'ANOMALY_RESOLVED',
+        resolvedBy,
+        {
+          resolutionType: 'SECURITY_RESOLUTION',
+          resourceId: anomalyId,
+          severity: 'INFO',
+        },
+        null // IP address is not available in this context
+      );
 
       return true;
     } catch (error) {
