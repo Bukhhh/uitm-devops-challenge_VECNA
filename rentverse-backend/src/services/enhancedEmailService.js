@@ -316,7 +316,7 @@ Security Notice:
    * Generate plain text version of Security Alert email
    */
   generateSecurityAlertTextTemplate(details) {
-    return \`
+    return `
 RentVerse - Security Alert
 
 Suspicious activity was detected on your account.
