@@ -1,14 +1,4 @@
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
-const redis = require('redis');
-
-// Create Redis client for production, fallback to memory store for development
-let redisClient;
-if (process.env.REDIS_URL) {
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL
-  });
-}
 
 // Rate limiting configurations for different security levels
 const createRateLimiter = (options = {}) => {
@@ -24,7 +14,7 @@ const createRateLimiter = (options = {}) => {
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     handler: (req, res) => {
       console.log(`🚨 Rate limit exceeded for IP: ${req.ip} - ${req.originalUrl}`);
-      
+
       res.status(429).json({
         success: false,
         message: 'Too many requests from this IP, please try again later.',
@@ -37,14 +27,7 @@ const createRateLimiter = (options = {}) => {
 
   const finalOptions = { ...defaultOptions, ...options };
 
-  // Use Redis store if available, otherwise use memory store
-  if (redisClient) {
-    finalOptions.store = new RedisStore({
-      sendCommand: (...args) => redisClient.sendCommand(args),
-      prefix: 'rl:',
-    });
-  }
-
+  // Using memory store (no Redis for simplicity)
   return rateLimit(finalOptions);
 };
 
