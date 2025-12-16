@@ -3,16 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import ContentWrapper from '@/components/ContentWrapper'
-import { 
-  Shield, 
-  AlertTriangle, 
-  Activity, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  User, 
-  MapPin, 
+import {
+  Shield,
+  AlertTriangle,
+  Activity,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+  MapPin,
   Server,
   Lock,
   UserCheck,
@@ -20,12 +20,12 @@ import {
   FileCheck,
   FileX,
   LogIn,
-  LogOut
+  LogOut,
+  Bell
 } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import { formatDistanceToNow } from 'date-fns'
 import { createApiUrl } from '@/utils/apiConfig'
-
 import { fetchSecurityAlerts, resolveSecurityAlert, getSeverityColor, getAlertTypeIcon } from '@/utils/securityApiClient'
 import type { SecurityAlert } from '@/types/security'
 
@@ -84,12 +84,12 @@ export default function SecurityDashboard() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Real-time data states
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
   const [isLogsLoading, setIsLogsLoading] = useState(true)
   const [logsError, setLogsError] = useState<string | null>(null)
-  
+
   // Security alerts states
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([])
   const [isLoadingSecurityAlerts, setIsLoadingSecurityAlerts] = useState(true)
@@ -97,7 +97,7 @@ export default function SecurityDashboard() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
-  
+
   const { isLoggedIn } = useAuthStore()
 
   const fetchActivityLogs = useCallback(async () => {
@@ -113,7 +113,7 @@ export default function SecurityDashboard() {
       })
 
       if (!response.ok) throw new Error(`Failed to fetch activity logs: ${response.statusText}`)
-      
+
       const data = await response.json()
       if (data.success && data.data) {
         // Handle different response formats - auth endpoint returns data.data as array
@@ -160,6 +160,11 @@ export default function SecurityDashboard() {
       }
     } catch (err) {
       console.error('Failed to fetch security alerts:', err)
+    } finally {
+      setIsLoadingSecurityAlerts(false)
+    }
+  }, [])
+
   const handleResolveAlert = useCallback(async (alertId: string) => {
     setResolvingAlerts(prev => new Set(prev).add(alertId))
     try {
@@ -178,145 +183,70 @@ export default function SecurityDashboard() {
         return newSet
       })
     }
-  }, [showToastMessage])
-
-    } finally {
-      setIsLoadingSecurityAlerts(false)
-    }
   }, [])
 
   // Main effect for initialization and polling
-  // Main effect for initialization and polling
-
-
   useEffect(() => {
-
-
     const checkAdminRole = async () => {
-
-
       if (!isLoggedIn) {
-
-
         setIsLoading(false)
-
-
         return
-
-
       }
 
-
       try {
-
-
         const token = localStorage.getItem('authToken')
-
-
         if (!token) {
-
-
           setError('Authentication token not found')
-
-
           return
-
-
         }
 
-
         const response = await fetch('/api/auth/me', {
-
-
           headers: {
-
-
             'Content-Type': 'application/json',
-
-
             'Authorization': `Bearer ${token}`,
-
-
           },
-
-
         })
-
 
         if (!response.ok) throw new Error(`Failed to fetch user data: ${response.status}`)
 
-
         const data = await response.json()
 
-
         if (data.success && data.data.user && data.data.user.role === 'ADMIN') {
-
-
           setUser(data.data.user)
-
-
           fetchActivityLogs();
-
-
           fetchSecurityAlertsData();
-
-
           // fetchRealtimeThreats(); // Temporarily disabled
-
-
         } else {
-
-
           setError(data.data.user.role !== 'ADMIN' ? 'Access denied. Admin role required.' : 'Failed to load user data')
-
-
         }
-
-
       } catch (err) {
-
-
         setError(err instanceof Error ? err.message : 'Failed to verify admin access')
-
-
       } finally {
-
-
         setIsLoading(false)
-
-
       }
-
-
     }
-
 
     checkAdminRole();
 
-
     // Set up polling for real-time threats
-
-
     const interval = setInterval(() => {
-
-
       if (isLoggedIn && user?.role === 'ADMIN') {
-
-
         // fetchRealtimeThreats(); // Temporarily disabled
-
-
       }
-
-
     }, 15000); // Poll every 15 seconds
-
 
     return () => clearInterval(interval); // Cleanup on unmount
 
-
   }, [isLoggedIn, user?.role, fetchActivityLogs, fetchSecurityAlertsData, fetchRealtimeThreats])
 
+  // Polling for security alerts
+  useEffect(() => {
+    if (!user || user.role !== 'ADMIN') return
+    const interval = setInterval(() => {
+      fetchSecurityAlertsData()
+    }, 30000) // Poll every 30 seconds
+    return () => clearInterval(interval)
+  }, [user, fetchSecurityAlertsData])
 
   const showToastMessage = (message: string) => {
     setToastMessage(message)
@@ -399,8 +329,7 @@ export default function SecurityDashboard() {
           </button>
         </div>
       </div>
-      </div>
-      
+
       {/* Security Alerts */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
         <div className="p-6 border-b border-slate-200">
@@ -420,7 +349,7 @@ export default function SecurityDashboard() {
             </div>
           </div>
         </div>
-        
+
         {isLoadingSecurityAlerts && <p className="p-6 text-slate-500">Loading security alerts...</p>}
         {!isLoadingSecurityAlerts && (
           <div className="p-6">
@@ -438,9 +367,9 @@ export default function SecurityDashboard() {
                         <p className="text-sm text-slate-600 mb-2">{alert.description}</p>
                         <div className="text-xs text-slate-500">
                           <span>User: {alert.user.name || alert.user.email}</span>
-                          <span className="mx-2">·</span>
+                          <span className="mx-2">Â·</span>
                           <span>IP: {alert.ipAddress}</span>
-                          <span className="mx-2">·</span>
+                          <span className="mx-2">Â·</span>
                           <span>{formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}</span>
                         </div>
                       </div>
@@ -472,8 +401,7 @@ export default function SecurityDashboard() {
           </div>
         )}
       </div>
-      
-      {/* Live Activity Feed (Module 5) */}
+
       {/* Live Activity Feed (Module 5) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="p-6 border-b border-slate-200">
@@ -488,7 +416,7 @@ export default function SecurityDashboard() {
             </div>
           </div>
         </div>
-        
+
         {isLogsLoading && <p className="p-6 text-slate-500">Loading activity feed...</p>}
         {logsError && <p className="p-6 text-red-500">Error: {logsError}</p>}
         {!isLogsLoading && !logsError && (
