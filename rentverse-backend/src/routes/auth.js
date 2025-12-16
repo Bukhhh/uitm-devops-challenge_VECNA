@@ -27,6 +27,9 @@ const emailService = require('../utils/emailService');
 const aiService = require('../services/aiIntegration.service');
 const activityLogger = require('../services/activityLogger');
 
+// Alias for backward compatibility
+const logger = activityLogger;
+
 // Import Middleware
 const { protect, authorize } = require('../middleware/auth');
 
