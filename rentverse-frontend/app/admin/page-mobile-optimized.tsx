@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import ContentWrapper from '@/components/ContentWrapper'
-import { 
-  Shield, 
-  AlertTriangle, 
-  Activity, 
-  Zap, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  User, 
-  MapPin, 
+import {
+  Shield,
+  AlertTriangle,
+  Activity,
+  Zap,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  User,
+  MapPin,
   AlertCircle,
   Play,
   TrendingUp,
@@ -26,10 +26,13 @@ import {
   EyeOff,
   Database,
   Globe,
-  Cpu
+  Cpu,
+  Bell
 } from 'lucide-react'
 import useAuthStore from '@/stores/authStore'
 import { createApiUrl } from '@/utils/apiConfig'
+import { fetchSecurityAlerts, resolveSecurityAlert, getSeverityColor, getAlertTypeIcon } from '@/utils/securityApiClient'
+import type { SecurityAlert } from '@/types/security'
 
 // Extended property type for UI with admin status
 interface PropertyApproval {
@@ -197,6 +200,9 @@ export default function AdminDashboardMobile() {
   const [showToast, setShowToast] = useState(false)
   const [activeTab, setActiveTab] = useState<'properties' | 'security'>('properties')
   const [showRealTimeData, setShowRealTimeData] = useState(true)
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([])
+  const [isLoadingSecurityAlerts, setIsLoadingSecurityAlerts] = useState(false)
+  const [resolvingAlerts, setResolvingAlerts] = useState<Set<string>>(new Set())
   const { isLoggedIn } = useAuthStore()
 
   // Check if user is admin
@@ -228,7 +234,7 @@ export default function AdminDashboardMobile() {
         }
 
         const data: AuthMeResponse = await response.json()
-        
+
         if (data.success) {
           setUser(data.data.user)
         } else {
@@ -270,7 +276,7 @@ export default function AdminDashboardMobile() {
         }
 
         const data: PendingApprovalsResponse = await response.json()
-        
+
         if (data.success) {
           setPendingApprovals(data.data.approvals)
         } else {
@@ -376,7 +382,7 @@ export default function AdminDashboardMobile() {
 
         const data: ActivityLogsResponse = await response.json()
         console.log('Activity logs data (mobile):', data)
-        
+
         if (data.success) {
           setActivityLogs(data.data.logs)
         } else {
@@ -459,7 +465,7 @@ export default function AdminDashboardMobile() {
 
         const data: SystemMetricsResponse = await response.json()
         console.log('System metrics data (mobile):', data)
-        
+
         if (data.success) {
           setSystemMetrics(data.data.metrics)
           setRateLimitStats(data.data.rateLimitStats)
@@ -494,6 +500,30 @@ export default function AdminDashboardMobile() {
 
     // Refresh metrics every 30 seconds
     const interval = setInterval(fetchSystemMetrics, 30000)
+    return () => clearInterval(interval)
+  }, [user])
+
+  // Fetch security alerts
+  useEffect(() => {
+    const fetchSecurityAlertsData = async () => {
+      if (!user || user.role !== 'ADMIN') return
+
+      try {
+        setIsLoadingSecurityAlerts(true)
+        const response = await fetchSecurityAlerts()
+        setSecurityAlerts(response.data)
+      } catch (error) {
+        console.error('Error fetching security alerts:', error)
+        // Don't show error for security alerts as they might not be implemented yet
+      } finally {
+        setIsLoadingSecurityAlerts(false)
+      }
+    }
+
+    fetchSecurityAlertsData()
+
+    // Poll for security alerts every 30 seconds
+    const interval = setInterval(fetchSecurityAlertsData, 30000)
     return () => clearInterval(interval)
   }, [user])
 
@@ -533,7 +563,7 @@ export default function AdminDashboardMobile() {
             ok: response.ok
           }))
         )
-        
+
         // Update progress
         setTimeout(() => {
           setAttackProgress(((i + 1) / 20) * 100)
@@ -541,26 +571,26 @@ export default function AdminDashboardMobile() {
       }
 
       const results = await Promise.all(requests)
-      
+
       setIsSimulatingAttack(false)
-      
+
       // Analyze results
       const rateLimitedRequests = results.filter(r => r.status === 429)
       const successfulRequests = results.filter(r => r.ok)
-      
+
       if (rateLimitedRequests.length > 0) {
         showToastMessage(`⚠️ Rate Limiting Active: ${rateLimitedRequests.length} requests blocked with 429 status`)
       } else {
         showToastMessage(`⚠️ No Rate Limiting Detected: ${results.length} requests processed`)
       }
-      
+
       console.log('Rate limiting test results:', {
         total: results.length,
         successful: successfulRequests.length,
         rateLimited: rateLimitedRequests.length,
         results: results.slice(0, 5) // Log first 5 for debugging
       })
-      
+
     } catch (error) {
       setIsSimulatingAttack(false)
       console.error('Rate limiting test failed:', error)
@@ -571,7 +601,7 @@ export default function AdminDashboardMobile() {
   // Real Security Monitoring Test (Module 4 - Smart Alerts)
   const simulateSuspiciousLogin = async () => {
     setIsSimulatingAnomaly(true)
-    
+
     try {
       const token = localStorage.getItem('authToken')
       if (!token) {
@@ -594,13 +624,13 @@ export default function AdminDashboardMobile() {
       })
 
       setIsSimulatingAnomaly(false)
-      
+
       if (response.ok) {
         showToastMessage('⚠️ Security Alert: Suspicious login pattern detected from unusual location')
       } else {
         showToastMessage('⚠️ Security Alert: Multiple failed login attempts detected')
       }
-      
+
     } catch (error) {
       setIsSimulatingAnomaly(false)
       console.error('Security simulation failed:', error)
@@ -658,7 +688,7 @@ export default function AdminDashboardMobile() {
       }
 
       const data = await response.json()
-      
+
       if (data.success) {
         setAutoReviewEnabled(data.data.status.isEnabled)
       } else {
@@ -698,7 +728,7 @@ export default function AdminDashboardMobile() {
       }
 
       const data = await response.json()
-      
+
       if (data.success) {
         setPendingApprovals(prev => prev.filter(approval => approval.propertyId !== propertyId))
         console.log('Property approved successfully:', data.message)
@@ -743,7 +773,7 @@ export default function AdminDashboardMobile() {
       }
 
       const data = await response.json()
-      
+
       if (data.success) {
         setPendingApprovals(prev => prev.filter(approval => approval.propertyId !== propertyId))
         console.log('Property rejected successfully:', data.message)
@@ -757,6 +787,25 @@ export default function AdminDashboardMobile() {
       setRejectingProperties(prev => {
         const newSet = new Set(prev)
         newSet.delete(propertyId)
+        return newSet
+      })
+    }
+  }
+
+  // Resolve security alert function
+  const resolveSecurityAlertHandler = async (alertId: string) => {
+    try {
+      setResolvingAlerts(prev => new Set(prev).add(alertId))
+      await resolveSecurityAlert(alertId)
+      setSecurityAlerts(prev => prev.filter(alert => alert.id !== alertId))
+      showToastMessage('Security alert resolved successfully')
+    } catch (error) {
+      console.error('Error resolving security alert:', error)
+      showToastMessage('Failed to resolve security alert')
+    } finally {
+      setResolvingAlerts(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(alertId)
         return newSet
       })
     }
@@ -855,7 +904,7 @@ export default function AdminDashboardMobile() {
                 <p className="text-xs sm:text-sm text-slate-600">Property management and security monitoring platform</p>
               </div>
             </div>
-            
+
             {/* Real-time toggle - Mobile responsive */}
             <div className="flex items-center justify-between">
               <span className="text-xs sm:text-sm text-slate-600">
@@ -864,8 +913,8 @@ export default function AdminDashboardMobile() {
               <button
                 onClick={() => setShowRealTimeData(!showRealTimeData)}
                 className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
-                  showRealTimeData 
-                    ? 'bg-green-100 text-green-700' 
+                  showRealTimeData
+                    ? 'bg-green-100 text-green-700'
                     : 'bg-slate-100 text-slate-600'
                 }`}
               >
@@ -876,7 +925,7 @@ export default function AdminDashboardMobile() {
               </button>
             </div>
           </div>
-          
+
           {/* Tab Navigation - Mobile responsive */}
           <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg w-full overflow-x-auto">
             <button
@@ -982,8 +1031,8 @@ export default function AdminDashboardMobile() {
                       onClick={toggleAutoReview}
                       disabled={isTogglingAutoReview}
                       className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 ${
-                        autoReviewEnabled 
-                          ? 'bg-teal-600' 
+                        autoReviewEnabled
+                          ? 'bg-teal-600'
                           : 'bg-slate-300'
                       } ${isTogglingAutoReview ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
@@ -1122,7 +1171,7 @@ export default function AdminDashboardMobile() {
                             </button>
                           </div>
                           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                            <button 
+                            <button
                               onClick={() => approveProperty(approval.property.id)}
                               disabled={approvingProperties.has(approval.property.id)}
                               className={`flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm ${
@@ -1131,7 +1180,7 @@ export default function AdminDashboardMobile() {
                             >
                               {approvingProperties.has(approval.property.id) ? 'Approving...' : 'Approve'}
                             </button>
-                            <button 
+                            <button
                               onClick={() => rejectProperty(approval.property.id)}
                               disabled={rejectingProperties.has(approval.property.id)}
                               className={`flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm ${
@@ -1327,7 +1376,7 @@ export default function AdminDashboardMobile() {
               <p className="text-xs sm:text-sm text-slate-600 mb-4">
                 Test API rate limiting by firing 20 rapid requests to detect potential abuse.
               </p>
-              
+
               <div className="space-y-4">
                 <button
                   onClick={testRateLimiting}
@@ -1358,8 +1407,8 @@ export default function AdminDashboardMobile() {
                       />
                     </div>
                     <div className="text-xs text-slate-500">
-                      {attackProgress < 80 
-                        ? 'Sending test requests...' 
+                      {attackProgress < 80
+                        ? 'Sending test requests...'
                         : 'Analyzing rate limiting response...'
                       }
                     </div>
@@ -1377,7 +1426,7 @@ export default function AdminDashboardMobile() {
               <p className="text-xs sm:text-sm text-slate-600 mb-4">
                 Test anomaly detection by simulating suspicious login behavior.
               </p>
-              
+
               <div className="space-y-4">
                 <button
                   onClick={simulateSuspiciousLogin}
@@ -1402,6 +1451,85 @@ export default function AdminDashboardMobile() {
             </div>
           </div>
 
+          {/* Security Alerts Section - Mobile Optimized */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="p-4 lg:p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-slate-900 flex items-center">
+                  <Bell className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-red-600" />
+                  Security Alerts
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs sm:text-sm text-slate-600">
+                    {securityAlerts.length} unresolved
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 lg:p-6">
+              {isLoadingSecurityAlerts ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto"></div>
+                    <p className="text-sm text-slate-600">Loading security alerts...</p>
+                  </div>
+                </div>
+              ) : securityAlerts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Shield className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <p className="text-sm text-slate-600">No security alerts at this time</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {securityAlerts.slice(0, 5).map((alert) => (
+                    <div key={alert.id} className={`p-4 rounded-lg border-l-4 ${getSeverityColor(alert.severity)}`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-lg">{getAlertTypeIcon(alert.type)}</span>
+                            <span className="text-sm font-medium text-slate-900">{alert.type.replace(/_/g, ' ')}</span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' :
+                              alert.severity === 'HIGH' ? 'bg-orange-100 text-orange-800' :
+                              alert.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}>
+                              {alert.severity}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 mb-2">{alert.description}</p>
+                          <div className="text-xs text-slate-500 space-y-1">
+                            <p><strong>User:</strong> {alert.user.name} ({alert.user.email})</p>
+                            <p><strong>IP:</strong> {alert.ipAddress}</p>
+                            <p><strong>Time:</strong> {formatDate(alert.createdAt)} {formatTime(alert.createdAt)}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => resolveSecurityAlertHandler(alert.id)}
+                          disabled={resolvingAlerts.has(alert.id)}
+                          className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+                            resolvingAlerts.has(alert.id)
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
+                        >
+                          {resolvingAlerts.has(alert.id) ? 'Resolving...' : 'Resolve'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {securityAlerts.length > 5 && (
+                    <p className="text-xs text-slate-500 text-center">
+                      And {securityAlerts.length - 5} more alerts...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Live Activity Feed - Mobile Optimized */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="p-4 lg:p-6 border-b border-slate-200">
@@ -1418,7 +1546,7 @@ export default function AdminDashboardMobile() {
                 </div>
               </div>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50">
@@ -1443,7 +1571,7 @@ export default function AdminDashboardMobile() {
                 <tbody className="bg-white divide-y divide-slate-200">
                   {activityLogs.map((log) => (
                     <tr key={log.id} className={`hover:bg-slate-50 ${
-                      log.status === 'risk' ? 'bg-red-50 border-l-4 border-red-400' : 
+                      log.status === 'risk' ? 'bg-red-50 border-l-4 border-red-400' :
                       log.status === 'failed' ? 'bg-orange-50 border-l-4 border-orange-400' : ''
                     }`}>
                       <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-slate-900">
@@ -1470,7 +1598,7 @@ export default function AdminDashboardMobile() {
                       </td>
                       <td className="px-3 sm:px-4 lg:px-6 py-2 sm:py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          log.status === 'success' 
+                          log.status === 'success'
                             ? 'bg-green-100 text-green-800'
                             : log.status === 'failed'
                             ? 'bg-orange-100 text-orange-800'

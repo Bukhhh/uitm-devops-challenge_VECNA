@@ -430,9 +430,7 @@ router.post(
           'OTP_FAILED_EXPIRED',
           user.id,
           'OTP expired',
-          ipAddress
-        );
-        return res.status(400).json({
+          ipAddress        );`r`n`r`n        // Analyze OTP failure patterns for security anomalies`r`n        await securityAnomalyDetection.analyzeOTPFailure(user.id, ipAddress, req.headers['user-agent'] || 'Unknown');`r`n`r`n        return res.status(400).json({
           success: false,
           message: 'OTP expired. Please login again.',
         });
@@ -446,9 +444,7 @@ router.post(
           'OTP_FAILED_INVALID',
           user.id,
           'Invalid OTP entered',
-          ipAddress
-        );
-        return res.status(400).json({
+          ipAddress        );`r`n`r`n        // Analyze OTP failure patterns for security anomalies`r`n        await securityAnomalyDetection.analyzeOTPFailure(user.id, ipAddress, req.headers['user-agent'] || 'Unknown');`r`n`r`n        return res.status(400).json({
           success: false,
           message: 'Invalid OTP code',
         });
@@ -1559,4 +1555,5 @@ router.get(
 );
 
 module.exports = router;
+
 
