@@ -5,11 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Rentverse-VECNA',
   webDir: 'out',
   server: {
-    // For development, use your local server
-    // url: 'http://YOUR_IP:3001',
-    // cleartext: true,
-
-    // For production, leave commented (uses bundled assets)
+    url: 'https://uitm-devops-challenge-vecna-rentver-theta.vercel.app',
+    cleartext: false,
   },
   android: {
     allowMixedContent: true,
