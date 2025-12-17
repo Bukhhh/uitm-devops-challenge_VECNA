@@ -2,17 +2,17 @@
 <p align="center"><i>A Secure Property Rental Platform with DevSecOps Integration</i></p>
 
 <div align="center">
-  <img src="github/assets/LogoUiTM.png" width="550" height="550" alt="UiTM Logo"><br>
+  <img src="assets/github/assets/LogoUiTM.png" width="550" height="550" alt="UiTM Logo"><br>
   <b>UiTM Tapah</b>
   <br><br>
   <hr width="50%">
   <br>
-  <img src="github/assets/logo.png" width="250" height="250" alt="RentVerse Logo"><br>
+  <img src="assets/github/assets/logo.png" width="250" height="250" alt="RentVerse Logo"><br>
   <i>Building the Future Through Innovation</i>
   <br><br>
   <hr width="50%">
   <br>
-  <img src="github/assets/icon.jpg" width="350" height="350" alt="Team Vecna"><br>
+  <img src="assets/github/assets/icon.jpg" width="350" height="350" alt="Team Vecna"><br>
   <b>Team Vecna</b>
 </div>
 
@@ -36,19 +36,19 @@
   <table>
     <tr>
       <td align="center" width="500">
-        <img src="github/assets/bukh.jpg" width="400" height="400" alt="Bukhari"><br>
+        <img src="assets/github/assets/bukh.jpg" width="400" height="400" alt="Bukhari"><br>
         <b>MOHAMAD BUKHARI BIN<br>AHMAD HUZAIRI</b><br>
         <code>2024916761</code><br>
         <sub>Backend & Cloud Infrastructure</sub>
       </td>
       <td align="center" width="500">
-        <img src="github/assets/zul.jpg" width="400" height="400" alt="Zulkarnain"><br>
+        <img src="assets/github/assets/zul.jpg" width="400" height="400" alt="Zulkarnain"><br>
         <b>MUHAMAD ZULKARNAIN BIN<br>SAMSUDIN</b><br>
         <code>2024793133</code><br>
         <sub>Frontend & Beta Tester</sub>
       </td>
       <td align="center" width=500">
-        <img src="github/assets/aqil.jpg" width="400" height="400" alt="Aqil"><br>
+        <img src="assets/github/assets/aqil.jpg" width="400" height="400" alt="Aqil"><br>
         <b>AQIL IMRAN BIN<br>NORHIDZAM</b><br>
         <code>2024779269</code><br>
         <sub>Security Lead</sub>
@@ -64,7 +64,7 @@
 | Platform | URL |
 |----------|-----|
 | 🌐 **Web Application** | [rentverse-frontend-nine.vercel.app](https://rentverse-frontend-nine.vercel.app/) |
-| 📱 **Mobile APK** | [Download Android APK](MobileAppBuild/rentverse-vecna.apk) |
+| 📱 **Mobile App** | [Installable PWA](https://rentverse-frontend-nine.vercel.app/) |
 | 📚 **API Documentation** | [Swagger UI](/docs) |
 
 ### 🧪 Demo Credentials
@@ -83,7 +83,7 @@
 
 1. **Visit the Application**
    - Web: [rentverse-frontend-nine.vercel.app](https://rentverse-frontend-nine.vercel.app/)
-   - Mobile: Install the APK on Android device
+   - Mobile: Install the PWA on your device via the browser.
 
 2. **Create an Account**
    - Click "Sign Up" → Enter email, password, first & last name
@@ -164,7 +164,7 @@
 - Replay attack prevention using unique nonces
 - Stored securely on Cloudinary CDN
 
-### 🤖 3. AI Security Monitoring
+### 🤖 3. AI-Powered Security Monitoring
 > FastAPI-powered anomaly detection system
 
 - Analyzes login patterns for suspicious activity
@@ -263,7 +263,7 @@
 ## 📁 Project Structure
 
 ```
-uitm-devops-challenge_VECNA-main/
+uitm-devops-challenge_THREE_DEVELOPER/
 │
 ├── rentverse-backend/              # Express.js Backend
 │   ├── src/
@@ -308,7 +308,7 @@ uitm-devops-challenge_VECNA-main/
 │
 ├── rentverse-ai-service/           # Python AI Service
 │   ├── rentverse/                  # FastAPI application
-│   └── models/                     # ML models
+│   │   └── models/                 # ML models
 │
 ├── rentverse-mobile-app/           # Mobile App Configuration
 │
@@ -338,7 +338,6 @@ uitm-devops-challenge_VECNA-main/
 - Device verification for privileged roles
 - Risk-based login blocking (score > 0.8)
 
----
 
 ### Module 2: Multi-Tier API Rate Limiting
 
@@ -362,7 +361,6 @@ uitm-devops-challenge_VECNA-main/
 - CORS allowlist validation
 - 10MB request size limit
 
----
 
 ### Module 3: Digital Agreement & PDF Generation
 
@@ -384,7 +382,6 @@ uitm-devops-challenge_VECNA-main/
 5. Upload to Cloudinary with signed request
 6. Store hash and URL in database
 
----
 
 ### Module 4: AI-Powered Security Anomaly Detection
 
@@ -404,7 +401,6 @@ uitm-devops-challenge_VECNA-main/
 - Returns anomaly list with severity scores
 - High-severity triggers email alerts
 
----
 
 ### Module 5: Activity Logging & Audit Trail
 
@@ -417,7 +413,6 @@ All security-relevant actions are logged to the `ActivityLog` table:
 - Digital signature events
 - Admin actions
 
----
 
 ### Module 6: CI/CD Security Pipeline
 
@@ -536,7 +531,7 @@ flowchart TD
 #### 1️⃣ Clone Repository
 ```bash
 git clone <repository-url>
-cd uitm-devops-challenge_VECNA-main
+cd uitm-devops-challenge_THREE_DEVELOPER
 ```
 
 #### 2️⃣ Backend Setup
@@ -921,7 +916,7 @@ cd rentverse-ai-service && pip install safety && safety check
 curl -X POST http://localhost:3000/api/bookings \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
+  -d '{ 
     "propertyId": "PROPERTY_ID",
     "startDate": "2025-12-20",
     "endDate": "2026-12-20",
