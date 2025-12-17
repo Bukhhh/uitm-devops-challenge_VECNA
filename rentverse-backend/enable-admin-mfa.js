@@ -4,7 +4,7 @@ const qrcode = require('qrcode');
 
 async function enableAdminMFA() {
   try {
-    console.log('🔐 Enabling MFA for admin user...');
+    console.log('🔐 Setting up MFA for admin user with fixed OTP...');
 
     // Find the admin user
     const adminUser = await prisma.user.findUnique({
@@ -25,57 +25,46 @@ async function enableAdminMFA() {
     console.log(`Found admin user: ${adminUser.email} (ID: ${adminUser.id})`);
     console.log(`Current MFA status: ${adminUser.mfaEnabled ? 'Enabled' : 'Disabled'}`);
 
-    if (adminUser.mfaEnabled) {
-      console.log('✅ MFA is already enabled for admin user');
-      return;
+    // Generate TOTP secret if not exists
+    let secret = adminUser.mfaSecret;
+    if (!secret) {
+      console.log('Generating TOTP secret...');
+      const generatedSecret = speakeasy.generateSecret({
+        name: `RentVerse (${adminUser.email})`,
+        issuer: 'RentVerse Secure Login',
+        length: 20,
+      });
+      secret = generatedSecret.base32;
     }
 
-    // Generate TOTP secret
-    console.log('Generating TOTP secret...');
-    const secret = speakeasy.generateSecret({
-      name: `RentVerse (${adminUser.email})`,
-      issuer: 'RentVerse Secure Login',
-      length: 20,
-    });
+    // For testing purposes, use a fixed OTP instead of TOTP
+    const fixedOTP = '123456';
+    const futureDate = new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)); // 1 year from now
 
-    // Generate QR code for the secret
-    const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
-
-    console.log('✅ TOTP secret generated');
-    console.log(`Secret: ${secret.base32}`);
-    console.log(`QR Code URL: ${qrCodeUrl}`);
-
-    // Enable MFA for the admin user
-    console.log('Enabling MFA for testing...');
+    // Enable MFA for the admin user with fixed OTP
+    console.log('Setting up MFA with fixed OTP for testing...');
     await prisma.user.update({
       where: { id: adminUser.id },
       data: {
         mfaEnabled: true,
-        mfaSecret: secret.base32
+        mfaSecret: secret,
+        otp: fixedOTP,
+        otpExpires: futureDate
       }
     });
 
-    console.log('✅ MFA enabled successfully for admin user');
-    console.log('\n📱 To set up MFA in an authenticator app:');
-    console.log('1. Open Google Authenticator, Authy, or similar app');
-    console.log('2. Scan the QR code or manually enter the secret:');
-    console.log(`   Secret: ${secret.base32}`);
-    console.log('3. The app will generate 6-digit codes for login');
-
+    console.log('✅ MFA set up successfully for admin user with fixed OTP');
     console.log('\n🔑 Admin login credentials:');
     console.log('Email: admin@rentverse.com');
     console.log('Password: password123');
-    console.log('MFA: Required (use codes from authenticator app)');
+    console.log('MFA Code: 123456 (fixed for testing - never expires)');
 
-    // Generate a sample TOTP code for testing
-    const sampleToken = speakeasy.totp({
-      secret: secret.base32,
-      encoding: 'base32'
-    });
-    console.log(`\n🔢 Sample TOTP code (valid for 30 seconds): ${sampleToken}`);
+    console.log('\n🔧 Alternative TOTP setup (if you prefer dynamic codes):');
+    console.log(`Secret: ${secret}`);
+    console.log('Add this to Google Authenticator, Authy, or similar app');
 
   } catch (error) {
-    console.error('❌ Error enabling MFA:', error.message);
+    console.error('❌ Error setting up MFA:', error.message);
     throw error;
   }
 }
