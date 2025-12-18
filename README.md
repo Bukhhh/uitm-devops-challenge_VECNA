@@ -36,7 +36,7 @@
   <table>
     <tr>
       <td align="center" width="500">
-        <img src="assets/github/assets/bukh.jpg" width="400" height="400" alt="Bukhari"><br>
+        <img src="assets/github/assets/bukh.jpeg" width="400" height="400" alt="Bukhari"><br>
         <b>MOHAMAD BUKHARI BIN<br>AHMAD HUZAIRI</b><br>
         <code>2024916761</code><br>
         <sub>Backend & Cloud Infrastructure</sub>
