@@ -82,7 +82,7 @@
 ### 👤 User Registration & Login
 
 1. **Visit the Application**
-   - Web: [rentverse-frontend-nine.vercel.app](https://rentverse-frontend-nine.vercel.app/)
+   - Web: [rentverse-frontend-one.vercel.app](https://rentverse-frontend-one.vercel.app/)
    - Mobile: Install the PWA on your device via the browser.
 
 2. **Create an Account**
