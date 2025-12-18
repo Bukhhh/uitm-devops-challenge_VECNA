@@ -63,7 +63,7 @@
 
 | Platform | URL |
 |----------|-----|
-| 🌐 **Web Application** | [rentverse-frontend-one.vercel.app](https://rentverse-frontend-one.vercel.app/) |
+| 🌐 **Web Application** | [rentverse-frontend-theta.vercel.app]([https://rentverse-frontend-one.vercel.app/](https://uitm-devops-challenge-vecna-rentver-theta.vercel.app/)) |
 | 📱 **Mobile App** | [Installable PWA](At the Folder Above) |
 | 📚 **API Documentation** | [Swagger UI](/docs) |
 
@@ -82,7 +82,7 @@
 ### 👤 User Registration & Login
 
 1. **Visit the Application**
-   - Web: [rentverse-frontend-one.vercel.app](https://rentverse-frontend-one.vercel.app/)
+   - Web: [rentverse-frontend-theta.vercel.app]([https://rentverse-frontend-one.vercel.app/](https://uitm-devops-challenge-vecna-rentver-theta.vercel.app/))
    - Mobile: Install the PWA on your device via the browser.
 
 2. **Create an Account**
