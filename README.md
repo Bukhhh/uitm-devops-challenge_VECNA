@@ -69,9 +69,9 @@
 
 ### 🧪 Demo Credentials
 
-| Role | Email | Password | MFA |
+| Role | Email | Password | OTP |
 |------|-------|----------|-----|
-| **Admin** | `admin@rentverse.com` | `password123` | Disabled for testing |
+| **Admin** | `admin@rentverse.com` | `password123` |`123456` |
 
 > ⚠️ **Note**: User/Landlord registration requires a valid email for OTP verification.
 
