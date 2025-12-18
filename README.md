@@ -51,7 +51,7 @@
         <img src="assets/github/assets/aqil.jpg" width="400" height="400" alt="Aqil"><br>
         <b>AQIL IMRAN BIN<br>NORHIDZAM</b><br>
         <code>2024779269</code><br>
-        <sub>Security Lead</sub>
+        <sub>Documentation Lead</sub>
       </td>
     </tr>
   </table>
