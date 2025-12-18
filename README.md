@@ -63,8 +63,8 @@
 
 | Platform | URL |
 |----------|-----|
-| 🌐 **Web Application** | [rentverse-frontend-nine.vercel.app](https://rentverse-frontend-nine.vercel.app/) |
-| 📱 **Mobile App** | [Installable PWA](https://rentverse-frontend-nine.vercel.app/) |
+| 🌐 **Web Application** | [rentverse-frontend-nine.vercel.app](https://uitm-devops-challenge-vecna-rentverse-frontend-qq8a-9zf5c5fh7.vercel.app/) |
+| 📱 **Mobile App** | [Installable PWA](At the Folder Above) |
 | 📚 **API Documentation** | [Swagger UI](/docs) |
 
 ### 🧪 Demo Credentials
